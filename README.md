@@ -1,2 +1,1 @@
-# GRChombo_Boson_2D
-Numerical code for evolution of boson stars in 2D
+2D version of GRChombo. Includes my modifications of the code for constructing and evolving boson stars in axisymmetry, based on ExoZvezda.
