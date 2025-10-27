@@ -30,6 +30,7 @@ src_dirs := $(GRCHOMBO_SOURCE)/utils \
             $(GRCHOMBO_SOURCE)/InitialConditions/BosonStars  \
             $(GRCHOMBO_SOURCE)/InitialConditions/ThinShell  \
             $(GRCHOMBO_SOURCE)/InitialConditions/BosonStars/SingleStar \
+            $(GRCHOMBO_SOURCE)/ApparentHorizonFinder  \
             $(GRCHOMBO_SOURCE)/BlackHoles 
 include $(CHOMBO_HOME)/mk/Make.test
 

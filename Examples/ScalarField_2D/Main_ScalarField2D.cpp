@@ -3,14 +3,10 @@
  * Please refer to LICENSE in GRChombo's root directory.
  */
 
-#undef USE_AHFINDER //just ignore ah finder for now
-
 #include "CH_Timer.H"
 #include "parstream.H" //Gives us pout()
 #include <chrono>
 #include <iostream>
-
-#undef USE_AHFINDER //just ignore ah finder for now
 
 #include "BHAMR.hpp"
 #include "DefaultLevelFactory.hpp"
