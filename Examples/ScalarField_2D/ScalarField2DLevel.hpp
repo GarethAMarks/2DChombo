@@ -6,8 +6,6 @@
 #ifndef BLACKSTRINGLEVEL_HPP_
 #define BLACKSTRINGLEVEL_HPP_
 
-#undef USE_AHFINDER //just ignore ah finder for now
-
 #include "BHAMR.hpp"
 #include "DefaultLevelFactory.hpp"
 #include "GRAMRLevel.hpp"

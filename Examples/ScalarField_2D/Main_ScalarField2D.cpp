@@ -44,8 +44,15 @@ int runGRChombo(int argc, char *argv[])
 #ifdef USE_AHFINDER
     if (sim_params.AH_activate)
     {
-        AHSurfaceGeometry sph1(sim_params.bh1_params.center);
-        // AHSurfaceGeometry sph2(sim_params.bh2_params.center);
+	AHSurfaceGeometry sph1(std::array<double,2>{
+    	sim_params.bosonstar_params.star_centre[0] - 0.5 * sim_params.bosonstar_params.BS_separation,
+   	sim_params.bosonstar_params.star_centre[1]
+    });
+
+    // AHSurfaceGeometry sph2(std::array<double,2>{
+    //     sim_params.bosonstar_params.star_centre[0] + 0.5 * sim_params.bosonstar_params.BS_separation,
+    //     sim_params.bosonstar_params.star_centre[1]
+    // });
 
         bh_amr.m_ah_finder.add_ah(sph1, sim_params.AH_1_initial_guess_ellipsoid,
                                   sim_params.AH_params);

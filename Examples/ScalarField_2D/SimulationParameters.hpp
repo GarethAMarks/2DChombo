@@ -6,8 +6,6 @@
 #ifndef SIMULATIONPARAMETERS_HPP_
 #define SIMULATIONPARAMETERS_HPP_
 
-#undef USE_AHFINDER //just ignore ah finder for now
-
 // General includes
 #include "GRParmParse.hpp"
 #include "SimulationParametersBase.hpp"
@@ -122,13 +120,15 @@ public:
                 false);
 
         double guess1, guess2;
-        pp.load("AH_1_initial_guess", guess1, 0.5 * bh1_params.mass);
-        pp.load("AH_2_initial_guess", guess2, 0.5 * bh2_params.mass);
+        pp.load("AH_1_initial_guess", guess1, 0.5 * bosonstar_params.BlackHoleMass);
+        pp.load("AH_2_initial_guess", guess2, 0.5 * bosonstar_params.BlackHoleMass2);
 
         double r_x_1 = guess1, r_y_1 = guess1;
         double r_x_2 = guess2, r_y_2 = guess2;
-
-        double vel1 = bh1_params.momentum[0], vel2 = bh2_params.momentum[0];
+	
+	
+        double vel1 = bosonstar_params.BlackHoleMass * tanh(bosonstar_params.BS_rapidity)
+        , vel2 = bosonstar_params.BlackHoleMass2 * tanh(bosonstar2_params.BS_rapidity);
         double contraction1 = sqrt(1. - vel1 * vel1),
                contraction2 = sqrt(1. - vel2 * vel2);
 
