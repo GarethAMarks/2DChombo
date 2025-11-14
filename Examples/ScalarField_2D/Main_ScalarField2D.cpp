@@ -49,16 +49,16 @@ int runGRChombo(int argc, char *argv[])
    	sim_params.bosonstar_params.star_centre[1]
     });
 
-    // AHSurfaceGeometry sph2(std::array<double,2>{
-    //     sim_params.bosonstar_params.star_centre[0] + 0.5 * sim_params.bosonstar_params.BS_separation,
-    //     sim_params.bosonstar_params.star_centre[1]
-    // });
+    AHSurfaceGeometry sph2(std::array<double,2>{
+         sim_params.bosonstar_params.star_centre[0] + 0.5 * sim_params.bosonstar_params.BS_separation,
+         sim_params.bosonstar_params.star_centre[1]
+    });
 
         bh_amr.m_ah_finder.add_ah(sph1, sim_params.AH_1_initial_guess_ellipsoid,
                                   sim_params.AH_params);
-        // bh_amr.m_ah_finder.add_ah(sph2, sim_params.AH_2_initial_guess_ellipsoid,
-        //                           sim_params.AH_params);
-        // bh_amr.m_ah_finder.add_ah_merger(0, 1, sim_params.AH_params);
+        bh_amr.m_ah_finder.add_ah(sph2, sim_params.AH_2_initial_guess_ellipsoid,
+                                   sim_params.AH_params);
+        bh_amr.m_ah_finder.add_ah_merger(0, 1, sim_params.AH_params);
     }
 #endif
 

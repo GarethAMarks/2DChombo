@@ -20,7 +20,7 @@
 
 // Problem specific includes
 #include "CCZ4Cartoon.hpp"
-#include "MovingPunctureGauge.hpp"
+#include "IntegratedMovingPunctureGauge.hpp"
 #include "ConstraintsCartoon.hpp"
 #include "SetValue.hpp"
 #include "TraceARemovalCartoon.hpp"
@@ -106,7 +106,7 @@ void ScalarField2DLevel::specificEvalRHS(GRLevelData &a_soln,
     // Calculate CCZ4 right hand side
     Potential potential(m_p.potential_params);
     BoxLoops::loop(
-        CCZ4Cartoon<MovingPunctureGauge, FourthOrderDerivatives, Potential>(
+        CCZ4Cartoon<IntegratedMovingPunctureGauge, FourthOrderDerivatives, Potential>(
             m_p.ccz4_params, m_dx, m_p.sigma, potential, m_p.m_G_Newton,
             m_p.formulation),
         a_soln, a_rhs, EXCLUDE_GHOST_CELLS);
