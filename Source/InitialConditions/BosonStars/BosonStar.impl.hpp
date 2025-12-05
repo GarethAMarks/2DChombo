@@ -675,10 +675,11 @@ template <class data_t> void BosonStar::compute(Cell<data_t> current_cell) const
 
         using namespace TP::Z4VectorShortcuts;
         double TP_state[Qlen];
-        
 
         //read in coords, accounting for offset
-        double coords_array[3] = {coords.x, coords.y + m_params_BosonStar.star_centre[0],0.0};
+        //double coords_array[3] = {coords.x, coords.y + m_params_BosonStar.star_centre[0],0.0};
+
+        double coords_array[3] = {100.,100.,100.};
 
         //Read TwoPunctures data from the TPAMR initialized in Main
         TPAMR_HPP_::tp_amr.m_two_punctures.Interpolate(coords_array, TP_state);
@@ -750,7 +751,7 @@ template <class data_t> void BosonStar::compute(Cell<data_t> current_cell) const
         {
             pout() << "NaN in gammaUU[0][0] " << " at coords " << coords.x << ", " << coords.y << std::endl;
         }
-        else
+        else if (sqrt(coords.x * coords.x + coords.y * coords.y) < 1.0)
         {
             pout() << "chi at (" << coords.x << ", " << coords.y << ") is " << vars.chi << 
             "with " << gammaLL[0][0] << ", " << KLL[0][0] << ", " << vars.lapse << std::endl;
