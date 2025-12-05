@@ -12,6 +12,14 @@
 
 #include "BosonStarSolution.hpp" //for BosonStarSolution class
 
+#ifdef USE_TWOPUNCTURES
+#include "TwoPunctures.hpp" //for TwoPunctures-based ID method
+#include "TPAMR.hpp"
+#endif
+
+#undef Pi
+
+
 inline BosonStar::BosonStar(BosonStar_params_t a_params_BosonStar, BosonStar_params_t a_params_BosonStar2, 
                             Potential::params_t a_params_potential,
                             double a_G_Newton, double a_dx, int a_verbosity)
@@ -641,18 +649,6 @@ template <class data_t> void BosonStar::compute(Cell<data_t> current_cell) const
         else{vars.lapse += lapse_1;}
     }
 
-    double one_third = 1. / 3.;
-
-    for(int i = 0; i < 3; i++) 
-    {
-        for(int j = 0; j < 3; j++) 
-        {
-            vars.h[i][j] = vars.chi * gammaLL[i][j];
-        }
-    }
-
-    vars.hww = vars.chi *gammaLL[2][2];
-
     for(int i = 0; i < 3; i++) 
     {
         for(int j = 0; j < 3; j++) 
@@ -667,6 +663,114 @@ template <class data_t> void BosonStar::compute(Cell<data_t> current_cell) const
             }
         }
     }
+    
+    //TWOPUNCTURES-based initial data for BH binary
+    #ifdef USE_TWOPUNCTURES
+    if (m_params_BosonStar.BH_binary && initial_data_choice > 0)
+    {
+        //TwoPunctures and final versions of CCZ4 vars
+        //Tensor<2, double> gamma_TP, K_TP;
+        Tensor<1, double> shiftTP, Z3TP;
+        double lapseTP, ThetaTP;
+
+        using namespace TP::Z4VectorShortcuts;
+        double TP_state[Qlen];
+        
+
+        //read in coords, accounting for offset
+        double coords_array[3] = {coords.x, coords.y + m_params_BosonStar.star_centre[0],0.0};
+
+        //Read TwoPunctures data from the TPAMR initialized in Main
+        TPAMR_HPP_::tp_amr.m_two_punctures.Interpolate(coords_array, TP_state);
+
+        // TP metric
+        gammaLL[0][0] = TP_state[g11];
+        gammaLL[0][1] = gammaLL[1][0] = TP_state[g12];
+        gammaLL[0][2] = gammaLL[2][0] = TP_state[g13];
+        gammaLL[1][1] = TP_state[g22];
+        gammaLL[1][2] = gammaLL[2][1] = TP_state[g23];
+        gammaLL[2][2] = TP_state[g33];
+
+        Tensor<2, double> gamma_TP;
+
+        gamma_TP[0][0] = gammaLL[0][0];
+        gamma_TP[0][1] = gammaLL[0][1];
+        gamma_TP[0][2] = gammaLL[0][2];
+        gamma_TP[1][0] = gammaLL[1][0]; 
+        gamma_TP[1][1] = gammaLL[1][1];
+        gamma_TP[1][2] = gammaLL[1][2];
+        gamma_TP[2][0] = gammaLL[2][0];
+        gamma_TP[2][1] = gammaLL[2][1];
+        gamma_TP[2][2] = gammaLL[2][2];
+
+        // TP extrinsic curvature
+        KLL[0][0] = TP_state[K11];
+        KLL[0][1] = KLL[1][0] = TP_state[K12];
+        KLL[0][2] = KLL[2][0] = TP_state[K13];
+        KLL[1][1] = TP_state[K22];
+        KLL[1][2] = KLL[2][1] = TP_state[K23];
+        KLL[2][2] = TP_state[K33];
+
+        lapseTP = TP_state[lapse];
+
+        //get corrected chi and inverse metric, and lapse
+        vars.chi = pow(TensorAlgebra::compute_determinant_sym(gamma_TP), -1.0 / 3.0);
+        auto gammaUU_TP = TensorAlgebra::compute_inverse_sym(gamma_TP);
+
+        gammaUU[0][0] = gammaUU_TP[0][0];
+        gammaUU[0][1] = gammaUU_TP[0][1];
+        gammaUU[0][2] = gammaUU_TP[0][2];
+        gammaUU[1][0] = gammaUU_TP[1][0]; 
+        gammaUU[1][1] = gammaUU_TP[1][1];
+        gammaUU[1][2] = gammaUU_TP[1][2];
+        gammaUU[2][0] = gammaUU_TP[2][0];
+        gammaUU[2][1] = gammaUU_TP[2][1];
+        gammaUU[2][2] = gammaUU_TP[2][2];
+
+        vars.lapse = lapseTP;
+        vars.phi = 0.0;
+        vars.Pi = 0.0;
+
+        if (gammaLL[0][0]!= gammaLL[0][0])
+        {
+            pout() << "NaN in gammaLL[0][0] " << " at coords " << coords.x << ", " << coords.y  << std::endl;
+        }
+
+        if (std::isnan(KLL[0][0]))
+        {
+            pout() << "NaN in LL " << " at coords " << coords.x << ", " << coords.y <<  std::endl;
+        }
+
+        if (std::isnan(gammaUU[0][0]))
+        {
+            pout() << "NaN in gammaUU[0][0] " << " at coords " << coords.x << ", " << coords.y << std::endl;
+        }
+
+        if (std::isnan(vars.chi))
+        {
+            pout() << "NaN in gammaUU[0][0] " << " at coords " << coords.x << ", " << coords.y << std::endl;
+        }
+        else
+        {
+            pout() << "chi at (" << coords.x << ", " << coords.y << ") is " << vars.chi << 
+            "with " << gammaLL[0][0] << ", " << KLL[0][0] << ", " << vars.lapse << std::endl;
+        }
+
+
+    }
+    #endif
+
+    double one_third = 1. / 3.;
+
+    for(int i = 0; i < 3; i++) 
+    {
+        for(int j = 0; j < 3; j++) 
+        {
+            vars.h[i][j] = vars.chi * gammaLL[i][j];
+        }
+    }
+
+    vars.hww = vars.chi *gammaLL[2][2];
 
     for(int i = 0; i < 3; i++) 
     {
