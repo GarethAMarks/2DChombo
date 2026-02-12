@@ -22,11 +22,11 @@
 
 inline BosonStar::BosonStar(BosonStar_params_t a_params_BosonStar, BosonStar_params_t a_params_BosonStar2, 
                             Potential::params_t a_params_potential,
-                            double a_G_Newton, double a_dx, int a_verbosity)
+                            double a_G_Newton, double a_dx, int a_verbosity, TPAMR& a_tp_amr)
     : m_dx(a_dx), m_G_Newton(a_G_Newton),
       m_params_BosonStar(a_params_BosonStar), m_params_BosonStar2(a_params_BosonStar2),
-      m_params_potential(a_params_potential), m_verbosity(a_verbosity)
-{
+      m_params_potential(a_params_potential), m_verbosity(a_verbosity), m_tp_amr(a_tp_amr)
+{ 
 }
 
 
@@ -673,16 +673,24 @@ template <class data_t> void BosonStar::compute(Cell<data_t> current_cell) const
         Tensor<1, double> shiftTP, Z3TP;
         double lapseTP, ThetaTP;
 
+        /*if (!tp_computed)
+        {
+            TPAMR_HPP_::tp_amr.m_two_punctures.Run();
+            tp_computed = true;
+        }*/
+
         using namespace TP::Z4VectorShortcuts;
         double TP_state[Qlen];
 
         //read in coords, accounting for offset
-        //double coords_array[3] = {coords.x, coords.y + m_params_BosonStar.star_centre[0],0.0};
+        double coords_array[3] = {coords.x, coords.y /*+ m_params_BosonStar.star_centre[0]*/,0.0};
 
-        double coords_array[3] = {100.,100.,100.};
+        //double coords_array[3] = {1.,1.,1.};
 
         //Read TwoPunctures data from the TPAMR initialized in Main
-        TPAMR_HPP_::tp_amr.m_two_punctures.Interpolate(coords_array, TP_state);
+        //pout() << "BosonStar::compute: tp_amr address = " << &tp_amr << endl;
+        //pout() << "BosonStar::compute: tp_amr.m_two_punctures address = " << &(tp_amr.m_two_punctures) << endl;
+        m_tp_amr.m_two_punctures.Interpolate(coords_array, TP_state);
 
         // TP metric
         gammaLL[0][0] = TP_state[g11];
@@ -731,7 +739,8 @@ template <class data_t> void BosonStar::compute(Cell<data_t> current_cell) const
         vars.lapse = lapseTP;
         vars.phi = 0.0;
         vars.Pi = 0.0;
-
+        
+        /*
         if (gammaLL[0][0]!= gammaLL[0][0])
         {
             pout() << "NaN in gammaLL[0][0] " << " at coords " << coords.x << ", " << coords.y  << std::endl;
@@ -755,7 +764,13 @@ template <class data_t> void BosonStar::compute(Cell<data_t> current_cell) const
         {
             pout() << "chi at (" << coords.x << ", " << coords.y << ") is " << vars.chi << 
             "with " << gammaLL[0][0] << ", " << KLL[0][0] << ", " << vars.lapse << std::endl;
-        }
+
+            pout() << "TPstate: " << TP_state[g11] << ", " << TP_state[g12] << ", " << TP_state[g13] << ", "
+                 << TP_state[g22] << ", " << TP_state[g23] << ", " << TP_state[g33] << ", "
+                 << TP_state[K11] << ", " << TP_state[K12] << ", " << TP_state[K13] << ", "
+                 << TP_state[K22] << ", " << TP_state[K23] << ", " << TP_state[K33] << ", "
+                 << TP_state[lapse] << std::endl;
+        }*/
 
 
     }

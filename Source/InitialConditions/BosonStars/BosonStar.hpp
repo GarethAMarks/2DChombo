@@ -22,10 +22,16 @@
 #include "VarsTools.hpp"
 #include "parstream.H" //gives pout
 #include "simd.hpp"
+//#include "TP_Parameters.cpp"
 #include <vector>
+
+#ifdef USE_TWOPUNCTURES
+#include "TPAMR.hpp"
+#endif
 
 //! Class which solves for the initial data for a spherically symmetric boson
 //! star with phi^4 coupling
+
 class BosonStar
 {
 
@@ -33,7 +39,7 @@ class BosonStar
     //! The constructor
     BosonStar(BosonStar_params_t a_params_BosonStar, BosonStar_params_t a_params_BosonStar2,
               Potential::params_t a_params_potential, double a_G_Newton,
-              double a_dx, int a_verbosity);
+              double a_dx, int a_verbosity, TPAMR& a_tp_amr);
 
     //! Computes the 1d solution and stores in m_1d_sol
     void compute_1d_solution(const double max_r);
@@ -47,6 +53,9 @@ class BosonStar
 
     ThinShellSolution m_1d_ts;
     ThinShellSolution m_1d_ts2;
+
+    TPAMR& m_tp_amr;
+
 
 
     

@@ -17,7 +17,7 @@
 
 // For tag cells
 #include "ComplexPhiAndChiExtractionTaggingCriterion.hpp"
-#include "BoostedPunctureTrackerTaggingCriterion.hpp"
+#include "BinaryPunctureTaggingCriterion.hpp"
 
 // Problem specific includes
 #include "CCZ4Cartoon.hpp"
@@ -41,6 +41,11 @@
 #include "ADMQuantitiesExtraction.hpp"
 #include "GammaCartoonCalculator.hpp"
 
+#ifdef USE_TWOPUNCTURES
+#include "TPAMR.hpp"
+//TPAMR tp_amr;
+#endif
+
 void ScalarField2DLevel::specificAdvance()
 {
     // Enforce the trace free A_ij condition and positive chi and alpha
@@ -63,8 +68,36 @@ void ScalarField2DLevel::initialData()
 
     // When changing class here, don't forget to change potential if necessary
     double spacing = .01;
+
+    #ifdef USE_TWOPUNCTURES
+        static TPAMR tp_amr;
+
+        if (tp_amr.solve_done == false)
+        {
+            tp_amr.set_two_punctures_parameters(m_p.tp_params);
+            //pout() << "set tp params" << endl;
+            // Run TwoPunctures solver if id_choice is appropriate
+            if (m_p.bosonstar_params.id_choice > 0)
+            {   tp_amr.m_two_punctures.Run(); //maybe add a bool to ensure this only goes once...
+        
+                //test an interpolation here
+                /*double coords_array[3] = {1.,1.,1.};
+                using namespace TP::Z4VectorShortcuts;
+                double TP_state[Qlen];
+                tp_amr.m_two_punctures.Interpolate(coords_array, TP_state);
+                pout() << "TP State g11:" << TP_state[g11] <<  endl;
+                pout() << "TP State K11:" << TP_state[K11] <<  endl;
+
+                pout() << "Main: tp_amr address = " << &tp_amr << endl;
+                pout() << "Main: tp_amr.m_two_punctures address = " << &(tp_amr.m_two_punctures) << endl;*/
+            }
+            tp_amr.solve_done = true;
+        }
+    #endif
+
+
     BosonStar boson_star(m_p.bosonstar_params, m_p.bosonstar2_params, m_p.potential_params,
-                         m_p.m_G_Newton, m_dx, m_verbosity);
+                         m_p.m_G_Newton, m_dx, m_verbosity, tp_amr);
 
 
     if (m_verbosity)
@@ -142,11 +175,11 @@ void ScalarField2DLevel::computeTaggingCriterion(FArrayBox &tagging_criterion,
             m_bh_amr.m_puncture_tracker.get_puncture_coords();
 
         
-        BoxLoops::loop(BoostedPunctureTrackerTaggingCriterion<FourthOrderDerivatives>(
+        BoxLoops::loop(BinaryPunctureTaggingCriterion<FourthOrderDerivatives>(
                            m_dx, m_level,
                        m_p.puncture_max_levels, m_p.mass_extraction_params,
                            star_coords, m_p.activate_extraction,
-                           m_p.do_puncture_track, puncture_radii, puncture_masses, m_p.tag_buffer,
+                           m_p.do_puncture_track, puncture_masses, m_p.tag_buffer,
                          m_p.puncture_min_separation), current_state, tagging_criterion
                       );        
         //pout() << "Finished updating tagging criterion." << endl;
@@ -178,6 +211,19 @@ void ScalarField2DLevel::specificPostTimeStep()
                            EXCLUDE_GHOST_CELLS);
     BoxLoops::loop(Constraints<Potential>(m_dx, potential, m_p.m_G_Newton),
                        m_state_new, m_state_diagnostics, EXCLUDE_GHOST_CELLS);
+
+    // do puncture tracking on requested level
+    if (m_p.do_puncture_track && m_level == max(m_p.puncture1_level,
+                                               m_p.puncture2_level))
+    {
+        CH_TIME("PunctureTracking");
+        // only do the write out for every coarsest level timestep
+        int coarsest_level = 0;
+        bool write_punctures = at_level_timestep_multiple(coarsest_level);
+        m_bh_amr.m_puncture_tracker.execute_tracking(m_time, m_restart_time,
+                                                     m_dt, 1);
+    }
+
 
 
 #ifdef USE_AHFINDER

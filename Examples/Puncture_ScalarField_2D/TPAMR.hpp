@@ -28,9 +28,11 @@ class TPAMR : public BHAMR
         // explicitly invoke copy constructor of base Parameters class
         m_two_punctures.Parameters::operator=(params);
     }
+
+    bool solve_done = false;
 };
 
-extern TPAMR tp_amr;
+//extern TPAMR tp_amr;
 
 //endif /* USE_TWOPUNCTURES */
 

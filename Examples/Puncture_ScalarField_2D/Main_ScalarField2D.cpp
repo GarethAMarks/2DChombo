@@ -20,7 +20,7 @@
 
 #ifdef USE_TWOPUNCTURES
 #include "TPAMR.hpp"
-TPAMR tp_amr;
+//TPAMR tp_amr;
 #endif
 
 
@@ -29,22 +29,18 @@ int runGRChombo(int argc, char *argv[])
     // Load the parameter file and construct the SimulationParameter class
     // To add more parameters edit the SimulationParameters file.
     char *in_file = argv[1];
+    pout() << "starting param parsing" << endl;
     GRParmParse pp(argc - 2, argv + 2, NULL, in_file);
     SimulationParameters sim_params(pp);
 
     if (sim_params.just_check_params)
         return 0;
 
-    #ifdef USE_TWOPUNCTURES
-        //TPAMR bh_amr;
-        tp_amr.set_two_punctures_parameters(sim_params.tp_params);
-        // Run TwoPunctures solver if id_choice is appropriate
-        if (sim_params.bosonstar_params.id_choice > 0)
-            tp_amr.m_two_punctures.Run();
-    #endif
+   // pout() << "finished param parsing" << endl;
+    
+
 
     BHAMR bh_amr;
-
 
         // must be before 'setupAMRObject' to define punctures for tagging criteria
     if (sim_params.do_puncture_track)
