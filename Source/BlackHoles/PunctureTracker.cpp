@@ -4,6 +4,7 @@
  */
 
 #include "PunctureTracker.hpp"
+#include "GRAMR.hpp" // for static_cast to access get_restart_step()
 #include "ChomboParameters.hpp" // for writing data
 #include "DimensionDefinitions.hpp"
 #include "InterpolationQuery.hpp"
@@ -14,7 +15,7 @@
 void PunctureTracker::initial_setup(
     const std::vector<std::array<double, CH_SPACEDIM>> &initial_puncture_coords,
     const std::string &a_filename, const std::string &a_output_path,
-    const int a_min_level)
+    const int a_min_level, const double a_coarsest_dt)
 {
     if (!FilesystemTools::directory_exists(a_output_path))
         FilesystemTools::mkdir_recursive(a_output_path);
@@ -26,25 +27,28 @@ void PunctureTracker::initial_setup(
     m_puncture_coords = initial_puncture_coords;
 
     m_min_level = a_min_level;
+    m_coarsest_dt = a_coarsest_dt;
 }
 
 void PunctureTracker::restart_punctures()
 {
-    int current_step = m_interpolator->getAMR().s_step;
+    // Use m_restart_step (set from checkpoint) rather than s_step
+    // (which is the live global counter and may be ahead of the
+    // restart step on a re-restart).
+    const AMR &amr = m_interpolator->getAMR();
+    // m_restart_step == -1 means fresh start (no checkpoint read)
+    int restart_step = static_cast<const GRAMR &>(amr).get_restart_step();
 
-    if (current_step == 0)
+    if (restart_step <= 0)
     {
-        // if it is the first timestep, use the param values
-        // rather than look for the output file, e.g. for when
-        // restart from IC solver checkpoint
+        // Fresh start: use the param values supplied to initial_setup
         set_initial_punctures();
     }
     else
     {
-        // look for the current puncture location in the
-        // puncture output file (it needs to exist!)
-        read_in_punctures(current_step,
-                          m_interpolator->getAMR().getCurrentTime());
+        // Restarted run: read puncture location from the output file
+        read_in_punctures(restart_step,
+                          amr.getCurrentTime(), m_coarsest_dt);
     }
 }
 
@@ -85,13 +89,18 @@ void PunctureTracker::set_initial_punctures()
 }
 
 //! Set punctures post restart
-void PunctureTracker::read_in_punctures(int a_int_step, double a_current_time)
+void PunctureTracker::read_in_punctures(int a_int_step, double a_current_time,
+                                        double a_coarsest_dt)
 {
     // read them in from the Punctures file at current time m_time
     // NB opening in APPEND mode allows reading where m_restart_time
-    // is greater than zero and m_time < m_restart_time + m_dt
+    // is greater than zero and m_time < m_restart_time + m_dt.
+    // We must use the coarsest-level dt here so that SmallDataIO
+    // opens the file in read+append mode (needed for duplicate removal),
+    // and so that the coords_epsilon matching is correct.
     bool first_step = false;
-    double dt = (a_current_time / a_int_step);
+    double dt = (a_coarsest_dt > 0.) ? a_coarsest_dt
+                                     : (a_current_time / a_int_step);
     SmallDataIO punctures_file(m_punctures_filename, dt, a_current_time,
                                a_current_time, SmallDataIO::APPEND, first_step);
 
@@ -175,9 +184,15 @@ void PunctureTracker::execute_tracking(double a_time, double a_restart_time,
     if (write_punctures)
     {
         bool first_step = false;
-        SmallDataIO punctures_file(m_punctures_filename, a_dt, a_time,
+        // Use m_coarsest_dt (not the fine-level a_dt) so that the
+        // SmallDataIO restart-window condition
+        //   m_time < m_restart_time + m_dt + epsilon
+        // fires correctly and remove_duplicate_time_data works.
+        double dt_for_io = (m_coarsest_dt > 0.) ? m_coarsest_dt : a_dt;
+        SmallDataIO punctures_file(m_punctures_filename, dt_for_io, a_time,
                                    a_restart_time, SmallDataIO::APPEND,
                                    first_step);
+        punctures_file.remove_duplicate_time_data();
 
         // use a vector for the write out
         punctures_file.write_time_data_line(get_puncture_vector());

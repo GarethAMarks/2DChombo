@@ -12,13 +12,13 @@ verbosity = 0
 # output_path = "" # Main path for all files. Must exist!
 chk_prefix = BosonChk_
 plot_prefix = Bosonp_
-#restart_file = BosonChk_
+restart_file = BosonChk_003500.2d.hdf5
 
 # HDF5files are written every dt = L/N*dt_multiplier*checkpoint_interval
-checkpoint_interval = 300
+checkpoint_interval = 500
 # set to 0 to turn off plot files (except at t=0 and t=stop_time)
 # set to -1 to never ever print plotfiles
-plot_interval = 50
+plot_interval = 250
 num_plot_vars = 8
 plot_vars = phi phi_Im Weyl4_Re Weyl4_Im rho chi Ham Mom #Sxx Sxy Syy Sww S Sxx_TF Sxy_TF Syy_TF Sww_TF
 
@@ -41,35 +41,34 @@ G_Newton = 1.0
 
 # BosonStar Initial data parameters
 identical = 0
-mass_ratio = 0.378487
-id_choice = 0
+mass_ratio = 1.0
+id_choice = 1
 radius_width1 = 100
 radius_width2 = 10
 #antiboson = 0
 conformal_factor_power = 4
-central_amplitude_CSF = 0.17
-central_amplitude_CSF2 = 0.1
+central_amplitude_CSF = 0.076
+central_amplitude_CSF2 = 0.01
 
-BS_separation = 48.0 #separation parallel to boost, x
-BS_rapidity = 0.0548582 # 20.14 # 0.09024418785614682 # 0.1003353 # 1.32 # 0.05004 is v = 1/20, 0.1003353 is v = 1/10
-BS_rapidity2 = 0.144077
+BS_separation = 80.0 #separation parallel to boost, x
+BS_rapidity = 0.1003353 # 20.14 # 0.09024418785614682 # 0.1003353 # 1.32 # 0.05004 is v = 1/20, 0.1003353 is v = 1/10
+BS_rapidity2 = 0.1003353
 phase = 0.0
 eigen = 0 # accepts ints < 20, radial excitation mode. If you really need eigen>=20 ask Robin
-gridpoints = 300001
+gridpoints = 100001
 
 BS_binary = true # make false for one star
-read_TS_1 = false #make true to read thinshell output from star1_data/
-read_TS_2 = false #make true to read thinshell output from star2_data/
-
 BS_BH_binary = false # make false for 2 stars, true for one star and one bh
+BH_binary = true
 BS_impact_parameter = 0.0 #separation perpendicular to boost, y
-BlackHoleMass = 0.0 # makes an isotropic black hole at the offset position, make sure BS_separation =/= 0
-star_centre = 256 256 0
+BlackHoleMass = 0.5 # makes an isotropic black hole at the offset position, make sure BS_separation =/= 0
+BlackHoleMass2 = 0.5
+star_centre = 3072 0 0
 
 # Potential params
-scalar_mass = 1.0
+scalar_mass = 1.266
 phi4_coeff = 0.0 # this is the lamda
-solitonic = true # if false, next line is irrelevant. Make true for solitonic potential
+solitonic = false # if false, next line is irrelevant. Make true for solitonic potential
 sigma_soliton = 0.2
 print_asymptotics = true
 
@@ -91,6 +90,50 @@ sf_amplitude = .01 # amp of gaussian
 #pot_lambda = .01 # serves as mass of .5m^2phi^2 potential
 # provide 'offset' or 'center'
 
+##############################################
+
+# TwoPunctures parameters
+
+# Main BH params
+# Either calculate target masses or set bare masses explicitly below
+TP_calculate_target_masses = true
+#TP_target_mass_plus = 0.5
+#TP_target_mass_minus = 0.5
+# TP_adm_tol = 1e-10
+# TP_mass_plus = 0.3523
+# TP_mass_minus = 0.3606
+# offset in x direction (or z if TP_swap_xz set true)
+#TP_offset_plus = 8.0
+#TP_offset_minus = -8.0
+#TP_swap_xz = false
+
+#momenta overriden by rapidity
+#TP_momentum_plus = 0.050505 0.0 0.0 -
+#TP_momentum_minus = 0.050505 0.0 0.0
+TP_spin_plus = 0.0 0.0 0.0
+TP_spin_minus = 0.0 0.0 0.0
+
+# Solver params
+ TP_npoints_A = 32
+ TP_npoints_B = 32
+ TP_npoints_phi = 16
+TP_Newton_tol = 1e-10
+TP_Newton_maxit = 10
+TP_epsilon = 1e-7
+# TP_Tiny = 0.0
+# TP_Extend_Radius = 0.0
+
+# Initial data params
+TP_use_spectral_interpolation = true
+TP_initial_lapse = psi^n
+TP_initial_lapse_psi_exponent = -2.0
+
+# Debug output
+ TP_do_residuum_debug_output = true
+ TP_do_initial_debug_output = true
+
+
+
 #################################################
 
 # Grid parameters
@@ -101,24 +144,24 @@ sf_amplitude = .01 # amp of gaussian
 # NB - if you have a non-cubic grid, you can specify 'N1' or 'N1_full',
 # 'N2' or 'N2_full' and 'N3' or 'N3_full' ( then dx_coarsest = L/N(max) )
 # NB - the N values need to be multiples of the block_factor
-N = 192
-L = 512
+N = 6144
+L = 6144
 
 # Maximum number of times you can regrid above coarsest level
-max_level = 7 # There are (max_level+1) grids, so min is zero
+max_level = 6 # There are (max_level+1) grids, so min is zero
 # Frequency of regridding at each level and thresholds on the tagging
 # Need one for each level except the top one, ie max_level items
 # Generally you do not need to regrid frequently on every level
 # Level Regridding: 0   1   2   3   4   5   6   7   8   9  10
-regrid_interval =   0   64   32   16   8   4   2   2   0   0   0
-regrid_threshold = 10
+regrid_interval =   0   1   1   1   1   1   1   1   0   0   0
+regrid_threshold = 0.1
 
 # Boson Star thresholds below
-regrid_threshold_phi = 0.3
-regrid_threshold_chi = 0.3
+threshold_phi = 0.125
+threshold_chi = 0.0625
 
 # Oscilloton thresholds below
-threshold_phi = 1.e-4
+#threshold_phi = 1.e-4
 threshold_K = 1.e-4
 threshold_rho = 1.e-5
 regrid_wall_width = .0
@@ -131,8 +174,17 @@ y_regrid_lim = 1
 
 # Tagging parameters
 bh_tagging_buffer = 0.5
-puncture_tag_max_levels = 10 10
+puncture_tag_max_levels = 6 6
 puncture_tag_min_separation = 0.001
+
+do_puncture_track = 1 #use puncture-tracking tagging if true, otherwise 2nd-deriv based
+puncture1_level = 6 #levels on which each puncture should reside, usually highest
+puncture2_level = 6
+tag_radius_A = 10
+tag_radius_B = 10
+#tag_buffer = 0.5 #extra buffer for puncture-based tagging
+#puncture_min_separation = 0.001 #stop tracking punctures seperately once this close 
+
 
 # Max and min box sizes
 max_box_size = 32
@@ -141,7 +193,7 @@ min_box_size = 16
 grid_buffer_size = 16
 # fill_ratio = 0.7
 # num_ghosts = 3
-center = 4 0  # defaults to center of the grid
+#center = 4 0  # defaults to center of the grid
 
 #################################################
 
@@ -184,7 +236,7 @@ nonzero_asymptotic_values = 1.0 1.0 1.0 1.0 1.0
 # Evolution parameters
 # dt will be dx*dt_multiplier on each grid level
 dt_multiplier = 0.25
-stop_time = 300.0
+stop_time = 2000.0
 #max_steps = 30
 # Spatial derivative order (only affects CCZ4 RHS)
 # not added to this example yet
@@ -216,37 +268,23 @@ calculate_constraint_norms = true
 
 #################################################
 # GW extraction params
-extraction_center = 256 0
+extraction_center = 3072 0
 activate_extraction = 1
-num_extraction_radii = 10
-extraction_radii = 60.0 70.0 80.0 90.0 100.0 110.0 120.0 140.0 160.0 180.0
-extraction_levels = 3 2 2 2 1 1 1 1 1 1
+num_extraction_radii = 16
+extraction_radii = 100.0 125.0 150.0 175.0 200.0 250.0 300.0 350.0 400.0 450.0 500.0 600.0 700.0 800.0 900.0 1000.0
+extraction_levels = 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 num_points_phi = 72
 num_points_theta = 108
-num_modes = 21
+num_modes = 7
 # l m for spherical harmonics
 modes = 2 0
-        2 1
-        2 -1
-        2 2
-        2 -2
         3 0
-        3 1
-        3 -1
-        3 2
-        3 -2
-        3 3
-        3 -3
         4 0
-        4 1
-        4 -1
-        4 2
-        4 -2
-        4 3
-        4 -3
-        4 4
-        4 -4
-
+        5 0
+        6 0
+        7 0
+        8 0
+               
 # integral_file_prefix = "Weyl4_mode_"
 write_extraction = 1
 extraction_subpath = "data/extraction" # directory for 'write_extraction = 1'
@@ -259,7 +297,7 @@ extraction_levels_ADM = 2 1 0
 extraction_extrapolation_order_ADM = 3 # 2 or 3
 extraction_extrapolation_radii_ADM = 0 1 2
 # Mass extraction params
-mass_extraction_center = 256 0
+mass_extraction_center = 3072 0
 activate_mass_extraction = 1
 num_mass_extraction_radii = 2
 mass_extraction_radii = 100. 120.
@@ -270,12 +308,12 @@ num_points_theta_mass = 24
 #################################################
 Tamara's star tracking for 2D
 
-do_star_track = false
-number_of_stars = 1
+do_star_track = true
+number_of_stars = 2
 star_points = 11
 star_track_width_A = 3.
 star_track_width_B = 3.
-star_track_centre = 512 512 0 # deafults to L/2 L/2 L/2
+star_track_centre = 3072 0 0 # deafults to L/2 L/2 L/2
 star_track_level = 5
 direction_of_motion = "xy"
 

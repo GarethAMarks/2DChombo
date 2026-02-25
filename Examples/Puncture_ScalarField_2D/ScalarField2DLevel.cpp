@@ -221,7 +221,7 @@ void ScalarField2DLevel::specificPostTimeStep()
         int coarsest_level = 0;
         bool write_punctures = at_level_timestep_multiple(coarsest_level);
         m_bh_amr.m_puncture_tracker.execute_tracking(m_time, m_restart_time,
-                                                     m_dt, 1);
+                                                     m_dt, write_punctures);
     }
 
 

@@ -11,18 +11,28 @@
 DIM = 2
 
 GRCHOMBO_SOURCE = ../../Source
-
+GSL_ROOT = /usr/local/software/spack/2024.2/opt/linux-ubuntu22.04-x86_64_v4/gcc-11.4.0/gsl-2.7.1-bw4k4zxuc5yay66l5mic5saul6geudxr
 ebase = Main_ScalarField2D
+
+
 
 # Figure out whether to build with Two Punctures
 ifdef TWOPUNCTURES_SOURCE
+
+#CXXFLAGS += -I$(GSL_ROOT)/include
+#LDFLAGS  += -L$(GSL_ROOT)/lib
+#LDLIBS   += -lgsl -lgslcblas -lm
+#INCLUDE_PATH += $(GSL_ROOT)/include
+
 ifneq (,$(wildcard $(TWOPUNCTURES_SOURCE)/TwoPunctures.hpp))
   $(info ================== Using TwoPunctures ==================)
   USE_TWOPUNCTURES := TRUE
+  XTRACPPFLAGS += -I$(GSL_ROOT)/include
+  XTRALIBFLAGS  = -L$(GSL_ROOT)/lib -lgsl -lgslcblas -lm
   # Note this code requires linking with the GNU Scientific Library
   # In addition to the line below, the include paths to the relevant header
   # files might also need to be passed to the preprocessor/compiler
-  XTRALIBFLAGS = -lgsl
+  #XTRALIBFLAGS = -lgsl
   cxxcppflags = -DUSE_TWOPUNCTURES
 else
   $(error TWOPUNCTURES_SOURCE not set correctly)
@@ -49,7 +59,7 @@ src_dirs := $(GRCHOMBO_SOURCE)/utils \
             $(GRCHOMBO_SOURCE)/InitialConditions/ThinShell  \
             $(GRCHOMBO_SOURCE)/InitialConditions/BosonStars/SingleStar \
             $(GRCHOMBO_SOURCE)/ApparentHorizonFinder  \
-            $(GRCHOMBO_SOURCE)/BlackHoles 
+            $(GRCHOMBO_SOURCE)/BlackHoles \
 
 ifeq ($(USE_TWOPUNCTURES),TRUE)
   src_dirs += $(TWOPUNCTURES_SOURCE)

@@ -23,13 +23,14 @@ class PunctureTracker
                      //!< (to fill ghosts)
 
     std::string m_punctures_filename;
+    double m_coarsest_dt; //!< coarsest-level dt, needed for correct SmallDataIO mode
 
     // saved pointer to external interpolator
     AMRInterpolator<Lagrange<4>> *m_interpolator;
 
   public:
     //! The constructor
-    PunctureTracker() : m_num_punctures(0), m_interpolator(nullptr) {}
+    PunctureTracker() : m_num_punctures(0), m_coarsest_dt(0.), m_interpolator(nullptr) {}
 
     //! set puncture locations on start (or restart)
     //! this needs to be done before 'setupAMRObject'
@@ -38,7 +39,8 @@ class PunctureTracker
                            &initial_puncture_coords,
                        const std::string &a_filename = "punctures",
                        const std::string &a_output_path = "",
-                       const int a_min_level = 0);
+                       const int a_min_level = 0,
+                       const double a_coarsest_dt = 0.);
 
     //! set puncture locations on start (or restart)
     void restart_punctures();
@@ -65,7 +67,8 @@ class PunctureTracker
     void set_initial_punctures();
 
     //! Set punctures post restart if m_time > 0
-    void read_in_punctures(int a_int_step, double a_restart_time);
+    void read_in_punctures(int a_int_step, double a_restart_time,
+                           double a_coarsest_dt);
 
     //! Use the interpolator to get the value of the shift at
     //! given coords

@@ -51,7 +51,32 @@ int runGRChombo(int argc, char *argv[])
         int puncture_tracker_min_level = sim_params.max_level - 1;
         bh_amr.m_puncture_tracker.initial_setup(
             {sim_params.bh1_params.center, sim_params.bh2_params.center},
-            "punctures", sim_params.data_path, puncture_tracker_min_level);
+            "punctures", sim_params.data_path, puncture_tracker_min_level,
+            sim_params.coarsest_dt);
+                // Compute initial star positions in simulation coordinates.
+        // BosonStar.impl.hpp measures coords relative to star_centre
+        // (the centre of mass), with:
+        //   Star 1 (rapidity > 0, moving right): offset +q*d/(q+1) in x, -q*b/(q+1) in y
+        //   Star 2 (rapidity2, moving left):     offset  -d/(q+1)  in x,   +b/(q+1) in y
+        // where d = BS_separation, b = BS_impact_parameter, q = mass_ratio.
+
+        /*const auto &bs1 = sim_params.bosonstar_params;
+        const double q = bs1.mass_ratio;
+        const double d = bs1.BS_separation;
+        const double b = bs1.BS_impact_parameter;
+        const auto &com = bs1.star_centre; // centre of mass in sim coords
+
+        std::array<double, CH_SPACEDIM> star1_pos = com;
+        star1_pos[0] += q * d / (q + 1.);
+        star1_pos[1] -= q * b / (q + 1.);
+
+        std::array<double, CH_SPACEDIM> star2_pos = com;
+        star2_pos[0] -= d / (q + 1.);
+        star2_pos[1] += b / (q + 1.);
+
+        bh_amr.m_puncture_tracker.initial_setup(
+            {star1_pos, star2_pos},
+            "punctures", sim_params.data_path, puncture_tracker_min_level);*/
     }
 
 
@@ -63,7 +88,16 @@ int runGRChombo(int argc, char *argv[])
     AMRInterpolator<Lagrange<4>> interpolator(
         bh_amr, sim_params.origin, sim_params.dx, sim_params.boundary_params,
         sim_params.verbosity);
+    
     bh_amr.set_interpolator(&interpolator);
+
+    // Initialise puncture tracker: writes t=0 header+data to punctures.dat
+    // and sets m_num_punctures. Without this, execute_tracking() is a no-op.
+    if (sim_params.do_puncture_track)
+    {
+        bh_amr.m_puncture_tracker.restart_punctures();
+    }
+
 
 #ifdef USE_AHFINDER
     if (sim_params.AH_activate)
