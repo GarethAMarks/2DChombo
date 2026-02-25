@@ -273,12 +273,15 @@ public:
 	double total_sep = sqrt(d*d + b*b);
 
         // BH positions
+        // TP convention: "plus" puncture lives at +par_b (tp_offset_plus),
+        //                "minus" puncture lives at -par_b (tp_offset_minus).
+        // bh1_params carries the "plus" mass/momentum, bh2_params the "minus".
         pp.load("TP_offset_minus", tp_offset_minus,  -total_sep / (q + 1));
         pp.load("TP_offset_plus", tp_offset_plus, q * total_sep / (q + 1));
         bh1_params.center = center;
         bh2_params.center = center;
-        bh1_params.center[0] += tp_offset_minus;
-        bh2_params.center[0] += tp_offset_plus;
+        bh1_params.center[0] += tp_offset_plus;
+        bh2_params.center[0] += tp_offset_minus;
 
         //test: account for y offset due to symmetry enforcement
         //bh1_params.center[1] += L/2;
