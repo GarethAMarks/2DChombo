@@ -158,9 +158,16 @@ template <class data_t> void BosonStar::compute(Cell<data_t> current_cell) const
         psi_ = m_1d_sol.get_psi_interp(r);
         psi_prime_ = m_1d_sol.get_dpsi_interp(r);
     }
-    
+     
     //pout() << "First star physical vars set!" << endl;
-
+    
+    if (m_params_BosonStar.add_pert)
+    {
+	double pert_eps = m_params_BosonStar.pert_eps;
+	int l = m_params_BosonStar.pert_num;
+	double pert_phase = std::atan2(y, x);
+	p_ = p_ * exp(-2 * pert_eps * ( cos(l * pert_phase)));
+    }	
     double r_tilde;
     //if BH binary, replace the first BS with Schwarzchild BH also
     if (m_params_BosonStar.BH_binary)
