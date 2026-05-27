@@ -197,7 +197,8 @@ void ScalarField2DLevel::specificPostTimeStep()
     {
         BoxLoops::loop(NoetherCharge<FourthOrderDerivatives>(m_dx), m_state_new, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
-        BoxLoops::loop(ModePowers<FourthOrderDerivatives>(m_dx), m_state_new, m_state_diagnostics,
+        BoxLoops::loop(ModePowers<FourthOrderDerivatives>(m_dx, m_p.bosonstar_params.star_centre),
+                  m_state_new, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
         BoxLoops::loop(ADMQuantities(m_p.extraction_params.center, m_dx, 0), m_state_new, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);

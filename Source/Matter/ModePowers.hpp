@@ -20,16 +20,20 @@ class ModePowers
 {
   protected:
     deriv_t m_deriv;
+    const std::array<double, CH_SPACEDIM> &m_center;
 
     template <class data_t> using Vars = CCZ4CartoonVars::VarsWithGauge<data_t>;
 
   public:
-    ModePowers(const double a_dx) : m_deriv(a_dx) {}
+    ModePowers(const double a_dx, const std::array<double, CH_SPACEDIM> &a_center)
+        : m_deriv(a_dx), m_center(a_center)
+    {
+    }
 
     template <class data_t> void compute(Cell<data_t> current_cell) const
     {
         const auto vars = current_cell.template load_vars<Vars>();
-        Coordinates<data_t> coords(current_cell, this->m_deriv.m_dx);
+        Coordinates<data_t> coords(current_cell, this->m_deriv.m_dx, m_center);
 
         data_t mod_phi = sqrt(vars.phi * vars.phi + vars.phi_Im * vars.phi_Im);
         data_t psi = atan2(coords.y, coords.x);
