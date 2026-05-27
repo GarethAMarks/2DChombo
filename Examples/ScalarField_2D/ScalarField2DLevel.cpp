@@ -5,6 +5,8 @@
 #include <fstream>
 #include <mutex>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "ScalarField2DLevel.hpp"
 
@@ -35,6 +37,7 @@
 #include "ComplexScalarField.hpp"
 #include "ComplexPotential.hpp"
 #include "ComputeWeightFunction.hpp"
+#include "ModePowers.hpp"
 
 #include "ADMQuantities.hpp"
 #include "ADMQuantitiesExtraction.hpp"
@@ -194,6 +197,8 @@ void ScalarField2DLevel::specificPostTimeStep()
     {
         BoxLoops::loop(NoetherCharge<FourthOrderDerivatives>(m_dx), m_state_new, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
+        BoxLoops::loop(ModePowers<FourthOrderDerivatives>(m_dx), m_state_new, m_state_diagnostics,
+                  EXCLUDE_GHOST_CELLS);
         BoxLoops::loop(ADMQuantities(m_p.extraction_params.center, m_dx, 0), m_state_new, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
 	BoxLoops::loop(Constraints<Potential>(m_dx, potential, m_p.m_G_Newton), m_state_new, m_state_diagnostics,
@@ -269,6 +274,27 @@ void ScalarField2DLevel::specificPostTimeStep()
             mod_phi_max_file.write_header_line({"max mod phi"});
         }
         mod_phi_max_file.write_time_data_line({mod_phi_max});
+
+        std::vector<double> mode_powers(13);
+        std::vector<std::string> mode_power_headers(13);
+        for (int m = 0; m <= 12; ++m)
+        {
+            double re = amr_reductions.sum(c_mode_power_re_0 + m);
+            double im = amr_reductions.sum(c_mode_power_im_0 + m);
+            mode_powers[m] = sqrt(re * re + im * im);
+            mode_power_headers[m] = "m" + std::to_string(m);
+        }
+
+        SmallDataIO mode_powers_file("mode_powers", m_dt, m_time,
+                                     m_restart_time,
+                                     SmallDataIO::APPEND,
+                                     first_step);
+        mode_powers_file.remove_duplicate_time_data();
+        if (first_step)
+        {
+            mode_powers_file.write_header_line(mode_power_headers);
+        }
+        mode_powers_file.write_time_data_line(mode_powers);
 
     }
     

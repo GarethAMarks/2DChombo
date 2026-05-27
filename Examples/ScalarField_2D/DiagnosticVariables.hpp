@@ -37,6 +37,34 @@ enum
     c_profile1,
     c_profile2,
 
+    c_mode_power_re_0,
+    c_mode_power_re_1,
+    c_mode_power_re_2,
+    c_mode_power_re_3,
+    c_mode_power_re_4,
+    c_mode_power_re_5,
+    c_mode_power_re_6,
+    c_mode_power_re_7,
+    c_mode_power_re_8,
+    c_mode_power_re_9,
+    c_mode_power_re_10,
+    c_mode_power_re_11,
+    c_mode_power_re_12,
+
+    c_mode_power_im_0,
+    c_mode_power_im_1,
+    c_mode_power_im_2,
+    c_mode_power_im_3,
+    c_mode_power_im_4,
+    c_mode_power_im_5,
+    c_mode_power_im_6,
+    c_mode_power_im_7,
+    c_mode_power_im_8,
+    c_mode_power_im_9,
+    c_mode_power_im_10,
+    c_mode_power_im_11,
+    c_mode_power_im_12,
+
     // c_Sxx,
     // c_Sxy,
     // c_Syy,
@@ -68,7 +96,19 @@ static const std::array<std::string, NUM_DIAGNOSTIC_VARS> variable_names = {
 
     "N", "mod_phi",
 
-    "profile1", "profile2"
+    "profile1", "profile2",
+
+    "mode_power_re_0",  "mode_power_re_1",  "mode_power_re_2",
+    "mode_power_re_3",  "mode_power_re_4",  "mode_power_re_5",
+    "mode_power_re_6",  "mode_power_re_7",  "mode_power_re_8",
+    "mode_power_re_9",  "mode_power_re_10", "mode_power_re_11",
+    "mode_power_re_12",
+
+    "mode_power_im_0",  "mode_power_im_1",  "mode_power_im_2",
+    "mode_power_im_3",  "mode_power_im_4",  "mode_power_im_5",
+    "mode_power_im_6",  "mode_power_im_7",  "mode_power_im_8",
+    "mode_power_im_9",  "mode_power_im_10", "mode_power_im_11",
+    "mode_power_im_12"
     
     };
 // "Sxx",    "Sxy",    "Syy",
