@@ -34,6 +34,9 @@ struct BosonStar_params_t
     double radius_width2;
     int conformal_factor_power;
     bool antiboson;
+    bool add_pert = false;
+    double pert_eps = 0.0;
+    int pert_num = 0;
     //double L;
     std::array<double, CH_SPACEDIM>
         star_centre; //!< coordinates of the centre of the star

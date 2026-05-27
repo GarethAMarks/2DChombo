@@ -84,6 +84,9 @@ public:
         pp.load("radius_width1", bosonstar_params.radius_width1, 10.);
         pp.load("radius_width2", bosonstar_params.radius_width2, 20.);
         pp.load("conformal_factor_power", bosonstar_params.conformal_factor_power, -4);
+        pp.load("add_pert", bosonstar_params.add_pert, false);
+        pp.load("pert_eps", bosonstar_params.pert_eps, 0.0);
+        pp.load("pert_num", bosonstar_params.pert_num, 0);
         pp.load("G_Newton", bosonstar_params.Newtons_constant, 1.0);
         pp.load("print_asymptotics", bosonstar_params.print_asymptotics, false);
 
