@@ -63,6 +63,8 @@ void ScalarField2DLevel::initialData()
     if (m_verbosity)
         pout() << "ScalarField2DLevel::initialData " << m_level << endl;
 
+    m_mode_power_center = m_p.bosonstar_params.star_centre;
+
     // When changing class here, don't forget to change potential if necessary
     double spacing = .01;
     BosonStar boson_star(m_p.bosonstar_params, m_p.bosonstar2_params, m_p.potential_params,
@@ -197,7 +199,7 @@ void ScalarField2DLevel::specificPostTimeStep()
     {
         BoxLoops::loop(NoetherCharge<FourthOrderDerivatives>(m_dx), m_state_new, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
-        BoxLoops::loop(ModePowers<FourthOrderDerivatives>(m_dx, m_p.bosonstar_params.star_centre),
+        BoxLoops::loop(ModePowers<FourthOrderDerivatives>(m_dx, m_mode_power_center),
                   m_state_new, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
         BoxLoops::loop(ADMQuantities(m_p.extraction_params.center, m_dx, 0), m_state_new, m_state_diagnostics,
@@ -265,6 +267,8 @@ void ScalarField2DLevel::specificPostTimeStep()
 
         // Compute the maximum of mod_phi and write it to a file
         double mod_phi_max = amr_reductions.max(c_mod_phi);
+        RealVect mod_phi_peak = amr_reductions.maxIndex(c_mod_phi);
+        m_mode_power_center = {mod_phi_peak[0], mod_phi_peak[1]};
         SmallDataIO mod_phi_max_file("mod_phi_max", m_dt, m_time,
                                  m_restart_time,
                                  SmallDataIO::APPEND,

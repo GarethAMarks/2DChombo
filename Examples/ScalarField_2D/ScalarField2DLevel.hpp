@@ -8,6 +8,8 @@
 
 #undef USE_AHFINDER //just ignore ah finder for now
 
+#include <array>
+
 #include "BHAMR.hpp"
 #include "DefaultLevelFactory.hpp"
 #include "GRAMRLevel.hpp"
@@ -21,6 +23,8 @@ class ScalarField2DLevel : public GRAMRLevel
     using GRAMRLevel::GRAMRLevel;
 
     BHAMR &m_bh_amr = dynamic_cast<BHAMR &>(m_gr_amr);
+
+    std::array<double, CH_SPACEDIM> m_mode_power_center;
 
      // Typedef for scalar field
     typedef ComplexScalarField<Potential> ComplexScalarFieldWithPotential;
