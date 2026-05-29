@@ -199,6 +199,9 @@ void ScalarField2DLevel::specificPostTimeStep()
     {
         BoxLoops::loop(NoetherCharge<FourthOrderDerivatives>(m_dx), m_state_new, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
+        AMRReductions<VariableType::diagnostic> amr_reductions(m_bh_amr);
+        RealVect mod_phi_peak = amr_reductions.maxIndex(c_mod_phi);
+        m_mode_power_center = {mod_phi_peak[0], mod_phi_peak[1]};
         BoxLoops::loop(ModePowers<FourthOrderDerivatives>(m_dx, m_mode_power_center),
                   m_state_new, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
@@ -267,8 +270,6 @@ void ScalarField2DLevel::specificPostTimeStep()
 
         // Compute the maximum of mod_phi and write it to a file
         double mod_phi_max = amr_reductions.max(c_mod_phi);
-        RealVect mod_phi_peak = amr_reductions.maxIndex(c_mod_phi);
-        m_mode_power_center = {mod_phi_peak[0], mod_phi_peak[1]};
         SmallDataIO mod_phi_max_file("mod_phi_max", m_dt, m_time,
                                  m_restart_time,
                                  SmallDataIO::APPEND,
