@@ -139,7 +139,7 @@ void ScalarField2DLevel::computeTaggingCriterion(FArrayBox &tagging_criterion,
                                                 m_p.bosonstar_params.BlackHoleMass2};
 
         const std::vector<std::array<double, CH_SPACEDIM>> star_coords =
-            m_bh_amr.m_puncture_tracker.get_puncture_coords();
+            m_st_amr.m_puncture_tracker.get_puncture_coords();
 
         
         BoxLoops::loop(BoostedPunctureTrackerTaggingCriterion<FourthOrderDerivatives>(
@@ -184,22 +184,22 @@ void ScalarField2DLevel::specificPostTimeStep()
     if (m_p.AH_activate && m_level == m_p.AH_params.level_to_run)
     {
         // Hack: if avg radius of found AH is negative, we reset initial guess
-        double current_avg_AH_radius =  m_bh_amr.m_ah_finder.get(0)->get_ave_F();
+        double current_avg_AH_radius =  m_st_amr.m_ah_finder.get(0)->get_ave_F();
         if (current_avg_AH_radius < 0.)
         {
-            m_bh_amr.m_ah_finder.get(0)->solver.reset_initial_guess();
+            m_st_amr.m_ah_finder.get(0)->solver.reset_initial_guess();
             pout() << "AHFinder: resetting initial guess as avg radius is "
                       "negative."
                    << endl;
         }
         else if (current_avg_AH_radius > 10.)
         {
-            m_bh_amr.m_ah_finder.get(0)->solver.reset_initial_guess();
+            m_st_amr.m_ah_finder.get(0)->solver.reset_initial_guess();
             pout() << "AHFinder: resetting initial guess as avg radius is "
                       "too large."
                    << endl;
         }
-        m_bh_amr.m_ah_finder.solve(m_dt, m_time, m_restart_time);
+        m_st_amr.m_ah_finder.solve(m_dt, m_time, m_restart_time);
     }
 #endif
 
@@ -237,7 +237,7 @@ void ScalarField2DLevel::specificPostTimeStep()
     if (m_level == 0)
     {
         bool first_step = (m_time == 0.);
-        AMRReductions<VariableType::diagnostic> amr_reductions(m_bh_amr);
+        AMRReductions<VariableType::diagnostic> amr_reductions(m_st_amr);
         double L2_Ham = amr_reductions.norm(c_Ham, 2, true);
         double L2_Mom = amr_reductions.norm(Interval(c_Mom1, c_Mom2), 2, true);
         SmallDataIO constraints_file("constraint_norms",
@@ -254,7 +254,7 @@ void ScalarField2DLevel::specificPostTimeStep()
         bool calculate_adm = at_level_timestep_multiple(adm_min_level);
         if (calculate_adm)
         {   
-            AMRReductions<VariableType::diagnostic> amr_reductions(m_bh_amr);
+            AMRReductions<VariableType::diagnostic> amr_reductions(m_st_amr);
             double M_ADM = amr_reductions.sum(c_Madm);
             SmallDataIO M_ADM_file("M_ADM", m_dt, m_time,
                                 m_restart_time, SmallDataIO::APPEND,

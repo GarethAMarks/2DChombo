@@ -21,8 +21,8 @@ class ScalarField2DLevel : public GRAMRLevel
     // Inherit the contructors from GRAMRLevel
     using GRAMRLevel::GRAMRLevel;
 
-    BHAMR &m_bh_amr = dynamic_cast<BHAMR &>(m_gr_amr);
-
+    STAMR &m_st_amr = dynamic_cast<STAMR &>(m_gr_amr);
+    
      // Typedef for scalar field
     typedef ComplexScalarField<Potential> ComplexScalarFieldWithPotential;
 

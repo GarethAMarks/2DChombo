@@ -73,15 +73,15 @@ int runGRChombo(int argc, char *argv[])
             sim_params.star_track_direction_of_motion);
     }
 
-    DefaultLevelFactory<ScalarField2DLevel> scalarfield2D_level_fact(bh_amr, sim_params);
-    setupAMRObject(bh_amr, scalarfield2D_level_fact);
+    DefaultLevelFactory<ScalarField2DLevel> scalarfield2D_level_fact(st_amr, sim_params);
+    setupAMRObject(st_amr, scalarfield2D_level_fact);
 
     // call this after amr object setup so grids known
     // and need it to stay in scope throughout run
     AMRInterpolator<Lagrange<4>> interpolator(
-        bh_amr, sim_params.origin, sim_params.dx, sim_params.boundary_params,
+        st_amr, sim_params.origin, sim_params.dx, sim_params.boundary_params,
         sim_params.verbosity);
-    bh_amr.set_interpolator(&interpolator);
+    st_amr.set_interpolator(&interpolator);
 
 
     // must be after interpolator is set
@@ -113,15 +113,15 @@ int runGRChombo(int argc, char *argv[])
             level->specificPostTimeStep();
     };
     MultiLevelTaskPtr<> call_task(task);
-    call_task.execute(bh_amr);
+    call_task.execute(st_amr);
 
-    bh_amr.run(sim_params.stop_time, sim_params.max_steps);
+    st_amr.run(sim_params.stop_time, sim_params.max_steps);
 
     auto now = Clock::now();
     auto duration = std::chrono::duration_cast<Minutes>(now - start_time);
     pout() << "Total simulation time (mins): " << duration.count() << ".\n";
 
-    bh_amr.conclude();
+    st_amr.conclude();
 
     CH_TIMER_REPORT(); // Report results when running with Chombo timers.
 
