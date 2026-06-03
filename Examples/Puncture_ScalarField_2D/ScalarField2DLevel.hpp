@@ -13,6 +13,7 @@
 #include "GRAMRLevel.hpp"
 #include "ComplexPotential.hpp"
 #include "ComplexScalarField.hpp"
+#include "STAMR.hpp"
 
 class ScalarField2DLevel : public GRAMRLevel
 {

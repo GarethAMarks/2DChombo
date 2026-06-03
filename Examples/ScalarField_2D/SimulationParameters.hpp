@@ -74,6 +74,15 @@ public:
         pp.load("G_Newton", bosonstar_params.Newtons_constant, 1.0);
         pp.load("print_asymptotics", bosonstar_params.print_asymptotics, false);
 
+        // Star Tracking
+        pp.load("do_star_track", do_star_track, false);
+        pp.load("number_of_stars", number_of_stars, 1);
+        pp.load("star_points", star_points, 11);
+        pp.load("star_track_width_A", star_track_width_A, 3.);
+        pp.load("star_track_width_B", star_track_width_B, 3.);
+        pp.load("direction_of_motion", star_track_direction_of_motion);
+        pp.load("star_track_level", star_track_level, 5);
+
         // Initialize values for bosonstar2_params to same as bosonstar_params
         // and then assign that ones that should differ below
         bosonstar2_params = bosonstar_params;
@@ -171,6 +180,15 @@ public:
     int activate_mass_extraction;
     extraction_params_t mass_extraction_params;
     bool identical;
+
+    // For tracking
+    bool do_star_track;
+    int number_of_stars;
+    int star_points;
+    double star_track_width_A;
+    double star_track_width_B;
+    std::string star_track_direction_of_motion;
+    int star_track_level;
     
     // Tagging thresholds
     Real regrid_threshold_phi, regrid_threshold_chi;

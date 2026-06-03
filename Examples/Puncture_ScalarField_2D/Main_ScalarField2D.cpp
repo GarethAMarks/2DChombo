@@ -18,6 +18,9 @@
 // Problem specific includes:
 #include "ScalarField2DLevel.hpp"
 
+// Star tracking
+#include "STAMR.hpp"
+
 #ifdef USE_TWOPUNCTURES
 #include "TPAMR.hpp"
 TPAMR tp_amr;
@@ -58,6 +61,17 @@ int runGRChombo(int argc, char *argv[])
             "punctures", sim_params.data_path, puncture_tracker_min_level);
     }
 
+    STAMR st_amr;
+
+    if (sim_params.do_star_track)
+    {
+        st_amr.m_star_tracker.initialise_star_tracking(
+            sim_params.number_of_stars,
+            {sim_params.positionA, sim_params.positionB},
+            sim_params.star_points, sim_params.star_track_width_A,
+            sim_params.star_track_width_B,
+            sim_params.star_track_direction_of_motion);
+    }
 
     DefaultLevelFactory<ScalarField2DLevel> scalarfield2D_level_fact(bh_amr, sim_params);
     setupAMRObject(bh_amr, scalarfield2D_level_fact);
@@ -68,6 +82,11 @@ int runGRChombo(int argc, char *argv[])
         bh_amr, sim_params.origin, sim_params.dx, sim_params.boundary_params,
         sim_params.verbosity);
     bh_amr.set_interpolator(&interpolator);
+
+
+    // must be after interpolator is set
+    if (sim_params.do_star_track)
+        st_amr.m_star_tracker.restart_star_tracking();
 
 #ifdef USE_AHFINDER
     if (sim_params.AH_activate)
