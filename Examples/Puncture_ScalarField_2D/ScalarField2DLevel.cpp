@@ -267,14 +267,6 @@ void ScalarField2DLevel::specificPostTimeStep()
             M_ADM_file.write_time_data_line({M_ADM});
         }
 
-        if (m_p.do_star_track && m_level == m_p.star_track_level)
-        {
-            pout() << "Running a star tracker now" << endl;
-            int coarsest_level = 0;
-            bool write_star_coords = at_level_timestep_multiple(coarsest_level);
-            m_st_amr.m_star_tracker.execute_tracking(m_time, m_restart_time, m_dt,
-                                                    write_star_coords);
-        }
 
         double noether_charge = amr_reductions.sum(c_N);
         SmallDataIO noether_charge_file("NoetherCharge", m_dt, m_time,
@@ -313,6 +305,15 @@ void ScalarField2DLevel::specificPostTimeStep()
         }
         mod_phi_max_file.write_time_data_line({mod_phi_max});
 
+    }
+
+    if (m_p.do_star_track && m_level == m_p.star_track_level)
+    {
+        pout() << "Running a star tracker now" << endl;
+        int coarsest_level = 0;
+        bool write_star_coords = at_level_timestep_multiple(coarsest_level);
+        m_st_amr.m_star_tracker.execute_tracking(m_time, m_restart_time, m_dt,
+                                                    write_star_coords);
     }
     
 }
