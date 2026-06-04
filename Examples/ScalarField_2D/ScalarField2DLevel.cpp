@@ -199,7 +199,7 @@ void ScalarField2DLevel::specificPostTimeStep()
     {
         BoxLoops::loop(NoetherCharge<FourthOrderDerivatives>(m_dx), m_state_new, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
-        AMRReductions<VariableType::diagnostic> amr_reductions(m_bh_amr);
+        AMRReductions<VariableType::diagnostic> amr_reductions(m_st_amr);
         RealVect mod_phi_peak = amr_reductions.maxIndex(c_mod_phi);
         m_mode_power_center = {mod_phi_peak[0], mod_phi_peak[1]};
         BoxLoops::loop(ModePowers<FourthOrderDerivatives>(m_dx, m_mode_power_center),
@@ -214,7 +214,7 @@ void ScalarField2DLevel::specificPostTimeStep()
     if (m_level == 0)
     {
         bool first_step = (m_time == 0.);
-        AMRReductions<VariableType::diagnostic> amr_reductions(m_bh_amr);
+        AMRReductions<VariableType::diagnostic> amr_reductions(m_st_amr);
         double L2_Ham = amr_reductions.norm(c_Ham, 2, true);
         double L2_Mom = amr_reductions.norm(Interval(c_Mom1, c_Mom2), 2, true);
         SmallDataIO constraints_file("constraint_norms",
@@ -231,7 +231,7 @@ void ScalarField2DLevel::specificPostTimeStep()
         bool calculate_adm = at_level_timestep_multiple(adm_min_level);
         if (calculate_adm)
         {   
-            AMRReductions<VariableType::diagnostic> amr_reductions(m_bh_amr);
+            AMRReductions<VariableType::diagnostic> amr_reductions(m_st_amr);
             double M_ADM = amr_reductions.sum(c_Madm);
             SmallDataIO M_ADM_file("M_ADM", m_dt, m_time,
                                 m_restart_time, SmallDataIO::APPEND,
@@ -303,5 +303,13 @@ void ScalarField2DLevel::specificPostTimeStep()
         mode_powers_file.write_time_data_line(mode_powers);
 
     }
-    
+        if (m_p.do_star_track && m_level == m_p.star_track_level)
+    {
+        pout() << "Running a star tracker now" << endl;
+        int coarsest_level = 0;
+        bool write_star_coords = at_level_timestep_multiple(coarsest_level);
+        m_st_amr.m_star_tracker.execute_tracking(m_time, m_restart_time, m_dt,
+                                                    write_star_coords);
+    }
+
 }

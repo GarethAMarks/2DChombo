@@ -8,7 +8,7 @@
 #include <chrono>
 #include <iostream>
 
-#include "BHAMR.hpp"
+#include "STAMR.hpp"
 #include "DefaultLevelFactory.hpp"
 #include "GRParmParse.hpp"
 #include "MultiLevelTask.hpp"
@@ -29,29 +29,44 @@ int runGRChombo(int argc, char *argv[])
     if (sim_params.just_check_params)
         return 0;
 
-    BHAMR bh_amr;
+    STAMR st_amr;
 
-    DefaultLevelFactory<ScalarField2DLevel> scalarfield2D_level_fact(bh_amr, sim_params);
-    setupAMRObject(bh_amr, scalarfield2D_level_fact);
+    if (sim_params.do_star_track)
+    {
+        st_amr.m_star_tracker.initialise_star_tracking(
+            sim_params.number_of_stars,
+            {sim_params.positionA, sim_params.positionB},
+            sim_params.star_points, sim_params.star_track_width_A,
+            sim_params.star_track_width_B,
+            sim_params.star_track_direction_of_motion);
+    }
+
+    DefaultLevelFactory<ScalarField2DLevel> scalarfield2D_level_fact(st_amr, sim_params);
+    setupAMRObject(st_amr, scalarfield2D_level_fact);
 
     // call this after amr object setup so grids known
     // and need it to stay in scope throughout run
     AMRInterpolator<Lagrange<4>> interpolator(
-        bh_amr, sim_params.origin, sim_params.dx, sim_params.boundary_params,
+        st_amr, sim_params.origin, sim_params.dx, sim_params.boundary_params,
         sim_params.verbosity);
-    bh_amr.set_interpolator(&interpolator);
+    st_amr.set_interpolator(&interpolator);
 
+
+    // must be after interpolator is set
+    if (sim_params.do_star_track)
+        st_amr.m_star_tracker.restart_star_tracking();
+        
 #ifdef USE_AHFINDER
     if (sim_params.AH_activate)
     {
         AHSurfaceGeometry sph1(sim_params.bh1_params.center);
         // AHSurfaceGeometry sph2(sim_params.bh2_params.center);
 
-        bh_amr.m_ah_finder.add_ah(sph1, sim_params.AH_1_initial_guess_ellipsoid,
+        st_amr.m_ah_finder.add_ah(sph1, sim_params.AH_1_initial_guess_ellipsoid,
                                   sim_params.AH_params);
-        // bh_amr.m_ah_finder.add_ah(sph2, sim_params.AH_2_initial_guess_ellipsoid,
+        // st_amr.m_ah_finder.add_ah(sph2, sim_params.AH_2_initial_guess_ellipsoid,
         //                           sim_params.AH_params);
-        // bh_amr.m_ah_finder.add_ah_merger(0, 1, sim_params.AH_params);
+        // st_amr.m_ah_finder.add_ah_merger(0, 1, sim_params.AH_params);
     }
 #endif
 
@@ -66,15 +81,15 @@ int runGRChombo(int argc, char *argv[])
             level->specificPostTimeStep();
     };
     MultiLevelTaskPtr<> call_task(task);
-    call_task.execute(bh_amr);
+    call_task.execute(st_amr);
 
-    bh_amr.run(sim_params.stop_time, sim_params.max_steps);
+    st_amr.run(sim_params.stop_time, sim_params.max_steps);
 
     auto now = Clock::now();
     auto duration = std::chrono::duration_cast<Minutes>(now - start_time);
     pout() << "Total simulation time (mins): " << duration.count() << ".\n";
 
-    bh_amr.conclude();
+    st_amr.conclude();
 
     CH_TIMER_REPORT(); // Report results when running with Chombo timers.
 

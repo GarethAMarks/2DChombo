@@ -10,7 +10,7 @@
 
 #include <array>
 
-#include "BHAMR.hpp"
+#include "STAMR.hpp"
 #include "DefaultLevelFactory.hpp"
 #include "GRAMRLevel.hpp"
 #include "ComplexPotential.hpp"
@@ -22,7 +22,7 @@ class ScalarField2DLevel : public GRAMRLevel
     // Inherit the contructors from GRAMRLevel
     using GRAMRLevel::GRAMRLevel;
 
-    BHAMR &m_bh_amr = dynamic_cast<BHAMR &>(m_gr_amr);
+    STAMR &m_st_amr = dynamic_cast<STAMR &>(m_gr_amr);
 
     std::array<double, CH_SPACEDIM> m_mode_power_center;
 
