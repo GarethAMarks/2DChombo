@@ -46,10 +46,14 @@ int runGRChombo(int argc, char *argv[])
             tp_amr.m_two_punctures.Run();
     #endif
 
-    BHAMR bh_amr;
+    //BHAMR bh_amr;
 
 
-        // must be before 'setupAMRObject' to define punctures for tagging criteria
+
+
+    STAMR st_amr;
+
+    // must be before 'setupAMRObject' to define punctures for tagging criteria
     if (sim_params.do_puncture_track)
     {
         // the tagging criterion used in this example means that the punctures
@@ -60,8 +64,6 @@ int runGRChombo(int argc, char *argv[])
             {sim_params.bh1_params.center, sim_params.bh2_params.center},
             "punctures", sim_params.data_path, puncture_tracker_min_level);
     }
-
-    STAMR st_amr;
 
     if (sim_params.do_star_track)
     {
