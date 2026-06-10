@@ -200,8 +200,16 @@ void ScalarField2DLevel::specificPostTimeStep()
         BoxLoops::loop(NoetherCharge<FourthOrderDerivatives>(m_dx), m_state_new, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
         AMRReductions<VariableType::diagnostic> amr_reductions(m_st_amr);
-        RealVect mod_phi_peak = amr_reductions.maxIndex(c_mod_phi);
-        m_mode_power_center = {mod_phi_peak[0], mod_phi_peak[1]};
+        if (m_p.do_star_track)
+        {
+            const auto &star_coords = m_st_amr.m_star_tracker.get_puncture_coords();
+            m_mode_power_center = {star_coords[0], star_coords[1]};
+        }
+        else
+        {
+            RealVect mod_phi_peak = amr_reductions.maxIndex(c_mod_phi);
+            m_mode_power_center = {mod_phi_peak[0], mod_phi_peak[1]};
+        }
         BoxLoops::loop(ModePowers<FourthOrderDerivatives>(m_dx, m_mode_power_center),
                   m_state_new, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
@@ -281,12 +289,21 @@ void ScalarField2DLevel::specificPostTimeStep()
         }
         mod_phi_max_file.write_time_data_line({mod_phi_max});
 
+        bool reflective_y =
+            (m_p.boundary_params.lo_boundary[1] == BoundaryConditions::REFLECTIVE_BC);
         std::vector<double> mode_powers(13);
         std::vector<std::string> mode_power_headers(13);
         for (int m = 0; m <= 12; ++m)
         {
             double re = amr_reductions.sum(c_mode_power_re_0 + m);
             double im = amr_reductions.sum(c_mode_power_im_0 + m);
+            if (reflective_y)
+            {
+                // cos(m*psi) is even in y so the full integral = 2 * half-domain sum.
+                // sin(m*psi) is odd in y so the full integral is zero.
+                re *= 2.0;
+                im = 0.0;
+            }
             mode_powers[m] = sqrt(re * re + im * im);
             mode_power_headers[m] = "m" + std::to_string(m);
         }

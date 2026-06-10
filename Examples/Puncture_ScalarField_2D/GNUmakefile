@@ -49,7 +49,8 @@ src_dirs := $(GRCHOMBO_SOURCE)/utils \
             $(GRCHOMBO_SOURCE)/InitialConditions/ThinShell  \
             $(GRCHOMBO_SOURCE)/InitialConditions/BosonStars/SingleStar \
             $(GRCHOMBO_SOURCE)/ApparentHorizonFinder  \
-            $(GRCHOMBO_SOURCE)/BlackHoles 
+            $(GRCHOMBO_SOURCE)/BlackHoles  \
+            $(GRCHOMBO_SOURCE)/BosonStars 
 
 ifeq ($(USE_TWOPUNCTURES),TRUE)
   src_dirs += $(TWOPUNCTURES_SOURCE)
