@@ -211,7 +211,7 @@ public:
     std::string star_track_direction_of_motion;
     int star_track_level;
 
-    std::array<double, CH_SPACEDIM> positionA, positionB
+    std::array<double, CH_SPACEDIM> positionA, positionB;
     
     // Tagging thresholds
     Real regrid_threshold_phi, regrid_threshold_chi;
