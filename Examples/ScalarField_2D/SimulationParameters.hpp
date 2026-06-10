@@ -74,6 +74,7 @@ public:
         pp.load("G_Newton", bosonstar_params.Newtons_constant, 1.0);
         pp.load("print_asymptotics", bosonstar_params.print_asymptotics, false);
 
+
         // Star Tracking
         pp.load("do_star_track", do_star_track, false);
         pp.load("number_of_stars", number_of_stars, 1);
@@ -127,6 +128,26 @@ public:
         pp.load("mass_extraction_center",
                 mass_extraction_params.extraction_center,
                 {0.0, 0.0});
+        
+        positionA[0] = bosonstar_params.star_centre[0] +
+                       bosonstar_params.BS_separation / 2.;
+        positionA[1] = bosonstar_params.star_centre[1] -
+                       bosonstar_params.BS_impact_parameter / 2.;
+
+
+        positionB[0] = bosonstar_params.star_centre[0] -
+                       bosonstar_params.BS_separation / 2.;
+        positionB[1] = bosonstar_params.star_centre[1] +
+                       bosonstar_params.BS_impact_parameter / 2.;
+
+
+        pout() << "Star A is at x-position " << positionA[0] << endl;
+        pout() << "Star A is at y-position " << positionA[1] << endl;
+
+
+        pout() << "Star B is at x-position " << positionB[0] << endl;
+        pout() << "Star B is at y-position " << positionB[1] << endl;
+
 
 
 #ifdef USE_AHFINDER
@@ -189,6 +210,8 @@ public:
     double star_track_width_B;
     std::string star_track_direction_of_motion;
     int star_track_level;
+
+    std::array<double, CH_SPACEDIM> positionA, positionB
     
     // Tagging thresholds
     Real regrid_threshold_phi, regrid_threshold_chi;
