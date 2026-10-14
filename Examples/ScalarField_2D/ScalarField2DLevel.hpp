@@ -48,6 +48,23 @@ class ScalarField2DLevel : public GRAMRLevel
                                          const double a_maximum) override;
 
     virtual void specificPostTimeStep() override;
+
+    // U(1) phase frame helpers (see Source/PhaseFrame)
+
+    /// Copy of the state with the scalar field rotated back to the physical
+    /// frame, phi = exp(i frame_theta) psi (filled by physical_state())
+    GRLevelData m_state_phys;
+
+    /// m_state_new with the physical scalar field: m_state_new itself if
+    /// use_phase_frame = 0, otherwise a rotated copy in m_state_phys. Call
+    /// after fillAllGhosts(); used by every diagnostic that is not U(1)
+    /// invariant (stress tensor, constraints, Weyl, tagging, plots)
+    const GRLevelData &physical_state();
+
+    /// a_phys = a_frame with matter rotated by exp(+i frame_theta), including
+    /// ghost cells (a_phys is (re)defined on a_frame's layout)
+    void frame_to_physical(const GRLevelData &a_frame,
+                           GRLevelData &a_phys) const;
 };
 
 #endif /* BLACKSTRINGLEVEL_HPP_ */

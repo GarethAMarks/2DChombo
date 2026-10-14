@@ -19,8 +19,10 @@ checkpoint_interval = 300
 # set to 0 to turn off plot files (except at t=0 and t=stop_time)
 # set to -1 to never ever print plotfiles
 plot_interval = 50
-num_plot_vars = 8
-plot_vars = phi phi_Im Weyl4_Re Weyl4_Im rho chi Ham Mom #Sxx Sxy Syy Sww S Sxx_TF Sxy_TF Syy_TF Sww_TF
+# NB: with use_phase_frame = 1, phi/phi_Im are the frame field psi; the
+# physical field is phi_phys/phi_Im_phys
+num_plot_vars = 12
+plot_vars = phi phi_Im phi_phys phi_Im_phys frame_theta frame_omega Weyl4_Re Weyl4_Im rho chi Ham Mom #Sxx Sxy Syy Sww S Sxx_TF Sxy_TF Syy_TF Sww_TF
 
 # subpaths - specific directories for hdf5, pout, extraction data
 # (these are created at runtime)
@@ -151,8 +153,11 @@ isPeriodic = 0 0
 # if not periodic, then specify the boundary type
 # 0 = static, 1 = sommerfeld, 2 = reflective
 # (see BoundaryConditions.hpp for details)
-hi_boundary = 1 1
-lo_boundary = 1 2
+# 4 = mixed: Sommerfeld for all evolution variables except the
+# extrapolating_vars below (the phase-frame variables), which are extrapolated.
+# Identical to 1 (Sommerfeld) for all other variables.
+hi_boundary = 4 4
+lo_boundary = 4 2
 
 # if reflective boundaries selected, must set
 # parity of all vars (in order given by UserVariables.hpp)
@@ -164,20 +169,24 @@ vars_parity            = 0 0 4 0 0   # chi, hij and hww
                          0 1 2 1 2   # lapse shift and B
                          0 0         # phi and Phi_Im
                          0 0         # Pi and Pi_im
+                         0 0         # frame_theta and frame_omega (even)
 vars_parity_diagnostic = 0 1 2 0     # Ham and Mom
                          0 7         # Weyl
                          0 0         # ADM M and P
-                         0 0 0 0 0 0 0 0 0 0 0 0          # rho and other ones
+                         0 0 0 0     # rho rho_ADM Sx Sy
+                         0 0 0 0     # N mod_phi dt_mod_phi gamma_tt
+                         0 0         # profile1 profile2
+                         0 0         # phi_phys phi_Im_phys
 
 # if sommerfeld boundaries selected, must select
 # asymptotic values
 num_nonzero_asymptotic_vars = 5
 nonzero_asymptotic_vars = chi h11 h22 hww lapse
 nonzero_asymptotic_values = 1.0 1.0 1.0 1.0 1.0
-# if you are using extrapolating BC:
-# extrapolation_order = 1
-# num_extrapolating_vars = -1
-# extrapolating_vars =
+# if you are using extrapolating (or mixed) BC:
+extrapolation_order = 1
+num_extrapolating_vars = 2
+extrapolating_vars = frame_theta frame_omega
 
 #################################################
 
@@ -213,6 +222,43 @@ sigma = 0.3
 calculate_constraint_norms = true
 # min_chi = 1.e-4
 # min_lapse = 1.e-4
+
+#################################################
+# U(1) phase frame for the complex scalar field (Source/PhaseFrame)
+#
+# Evolves psi = exp(-i Theta) phi and P = exp(-i Theta) Pi (in the phi/Pi
+# slots) with d_t Theta = Omega, so that a star's field is slowly varying in
+# time when Omega ~ its frequency. Theta (frame_theta) and Omega (frame_omega)
+# are axisymmetric scalars, so the frame commutes with the cartoon reduction.
+# Restarting from checkpoints written before these variables existed is not
+# supported.
+
+use_phase_frame = 0          # 1: evolve in the phase frame; 0: original variables (frame variables stay 0)
+frame_links = 1              # 1: link variables - stencils act on the physical field exp(i Theta) psi rotated
+                             #    into each cell's frame (same semi-discretisation as use_phase_frame = 0,
+                             #    KO included); 0: continuum connection D psi = d psi + i (d Theta) psi,
+                             #    with KO acting on psi directly
+frame_local_driver = 1       # 1: plain local driver
+                             #    d_t Omega = eta Im(conj(psi) d_t psi)/(|psi|^2 + eps^2) + kappa lap Omega
+                             #                + frame_stiffness lap Theta
+                             #    (lap = d_xx + d_yy + d_y/y); 0: Omega frozen at its initial profile
+frame_omega_from_ID = 1      # initial Omega: 1 = local frequency of the initial data,
+                             #    Im(conj(phi) d_t phi)/(|phi|^2 + eps^2) (~ each star's boosted frequency
+                             #    inside it, -> 0 far away); 0 = uniform frame_omega0
+frame_omega0 = 0.0           # uniform initial Omega if frame_omega_from_ID = 0
+frame_eta = 0.05             # driver relaxation rate (keep eta * coarsest dt < 2)
+frame_eps_rel = 0.01         # eps = frame_eps_rel * max(central_amplitude_CSF, central_amplitude_CSF2) ...
+#frame_eps = 1.7e-3          # ... unless frame_eps > 0 is given (use with read_TS_* initial data)
+frame_kappa_fac = 0.5        # Omega smoothing kappa = frame_kappa_fac * dx on each level
+                             #    (needs frame_kappa_fac * dt_multiplier <= 0.2); 0 disables
+frame_stiffness = 0.0        # optional d_t Omega += frame_stiffness lap Theta (bounds grad Theta; 0 disables)
+frame_test_theta0 = 0.0      # TEST ONLY: start from the pure-gauge phase Theta_0 = a r^2/(r^2 + w^2) about
+                             #    (frame_test_theta0_centre_x, 0); with frame_local_driver = 0,
+                             #    frame_omega_from_ID = 0 and frame_omega0 = 0 the physics must agree with
+                             #    use_phase_frame = 0 up to truncation error
+frame_test_theta0_width = 5.0      # w
+#frame_test_theta0_centre_x = 256 # defaults to star_centre x
+write_frame_diagnostics = 1  # write frame_diagnostics (min/max of Omega and Theta over the grid)
 
 #################################################
 # GW extraction params

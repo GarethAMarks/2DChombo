@@ -18,6 +18,12 @@
 
 // Problem specific(from robin) includes:
 #include "BosonStarParams.hpp"
+
+// U(1) phase frame for the scalar field
+#include "BoundaryConditions.hpp"
+#include "PhaseFrameParams.hpp"
+#include <algorithm>
+#include <cmath>
 //#include "ComplexPotential.hpp"
 
 #ifdef USE_AHFINDER
@@ -116,6 +122,8 @@ public:
                 mass_extraction_params.extraction_center,
                 {0.0, 0.0});
 
+        read_phase_frame_params(pp);
+
 
 #ifdef USE_AHFINDER
         pp.load("AH_set_origins_to_punctures", AH_set_origins_to_punctures,
@@ -146,8 +154,96 @@ public:
 #endif
     }
 
+    /// U(1) phase frame parameters (see params.txt for descriptions)
+    void read_phase_frame_params(GRParmParse &pp)
+    {
+        PhaseFrame_params_t &fp = phase_frame_params;
+        pp.load("use_phase_frame", fp.use_phase_frame, false);
+        pp.load("frame_links", fp.links, true);
+        pp.load("frame_local_driver", fp.local_driver, true);
+        pp.load("frame_omega_from_ID", fp.omega_from_ID, true);
+        pp.load("frame_omega0", fp.omega0, 0.0);
+        pp.load("frame_eta", fp.eta, 0.05);
+        pp.load("frame_eps_rel", fp.eps_rel, 0.01);
+        pp.load("frame_eps", fp.eps, -1.0);
+        pp.load("frame_kappa_fac", fp.kappa_fac, 0.5);
+        pp.load("frame_stiffness", fp.stiffness, 0.0);
+        pp.load("frame_test_theta0", fp.test_theta0, 0.0);
+        pp.load("frame_test_theta0_width", fp.test_theta0_width, 5.0);
+        pp.load("frame_test_theta0_centre_x", fp.test_theta0_centre_x,
+                bosonstar_params.star_centre[0]);
+        pp.load("write_frame_diagnostics", fp.write_diagnostics, false);
+
+        // eps: given directly, or relative to the largest central amplitude
+        if (fp.eps <= 0.)
+        {
+            double amp_max = std::abs(bosonstar_params.central_amplitude_CSF);
+            if (bosonstar_params.BS_binary)
+                amp_max = std::max(
+                    amp_max, std::abs(bosonstar2_params.central_amplitude_CSF));
+            fp.eps = fp.eps_rel * amp_max;
+        }
+    }
+
     void check_params()
-    {}
+    {
+        const PhaseFrame_params_t &fp = phase_frame_params;
+        if (fp.use_phase_frame)
+        {
+            check_parameter("frame_eps", fp.eps, fp.eps > 0.,
+                            "must be > 0 (set frame_eps, or frame_eps_rel > 0 "
+                            "with a nonzero central amplitude)");
+            check_parameter("frame_eta", fp.eta, fp.eta >= 0., "must be >= 0");
+            // explicit diffusion of Omega: kappa dt / dx^2 =
+            // frame_kappa_fac * dt_multiplier must stay below ~0.26 (RK4,
+            // 4th-order 2D Laplacian), less near the axis (d_y / y term)
+            check_parameter("frame_kappa_fac", fp.kappa_fac,
+                            fp.kappa_fac >= 0. &&
+                                fp.kappa_fac * dt_multiplier <= 0.2,
+                            "need 0 <= frame_kappa_fac * dt_multiplier <= 0.2 "
+                            "for stable explicit smoothing of Omega");
+            // relaxation term: eta * dt <= ~2.8 on the coarsest level
+            warn_parameter("frame_eta", fp.eta,
+                           fp.eta * coarsest_dt <= 2.,
+                           "eta * coarsest dt > 2: driver may be unstable on "
+                           "the coarsest level");
+            check_parameter("frame_stiffness", fp.stiffness,
+                            fp.stiffness >= 0., "must be >= 0");
+            warn_parameter("frame_stiffness", fp.stiffness,
+                           fp.stiffness <= 1.,
+                           "Theta becomes a wave with speed "
+                           "sqrt(frame_stiffness) > 1");
+            warn_parameter("frame_test_theta0", fp.test_theta0,
+                           fp.test_theta0 == 0.,
+                           "pure-gauge test mode: results must agree with "
+                           "use_phase_frame = 0 up to truncation error");
+            warn_parameter("frame_local_driver", fp.local_driver,
+                           fp.local_driver || !fp.omega_from_ID ||
+                               fp.test_theta0 != 0.,
+                           "fixed frame with Omega frozen at the local "
+                           "initial-data frequency profile");
+
+            // frame_theta and frame_omega should be extrapolated at outer
+            // boundaries (MIXED_BC with extrapolating_vars), not Sommerfeld
+            bool sommerfeld_bc = false;
+            for (int idir = 0; idir < CH_SPACEDIM; ++idir)
+            {
+                if (!boundary_params.is_periodic[idir] &&
+                    (boundary_params.hi_boundary[idir] ==
+                         BoundaryConditions::SOMMERFELD_BC ||
+                     boundary_params.lo_boundary[idir] ==
+                         BoundaryConditions::SOMMERFELD_BC))
+                    sommerfeld_bc = true;
+            }
+            warn_parameter("hi_boundary/lo_boundary", sommerfeld_bc,
+                           !sommerfeld_bc,
+                           "with use_phase_frame, use MIXED_BC (4) with "
+                           "extrapolating_vars = frame_theta frame_omega "
+                           "instead of Sommerfeld (1)");
+        }
+    }
+
+    PhaseFrame_params_t phase_frame_params;
 
     // tagging
     bool activate_extraction;

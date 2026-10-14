@@ -40,6 +40,10 @@
 #include "ADMQuantitiesExtraction.hpp"
 #include "GammaCartoonCalculator.hpp"
 
+// U(1) phase frame
+#include "CCZ4CartoonPhaseFrame.hpp"
+#include "PhaseFrameTools.hpp"
+
 void ScalarField2DLevel::specificAdvance()
 {
     // Enforce the trace free A_ij condition and positive chi and alpha
@@ -77,6 +81,20 @@ void ScalarField2DLevel::initialData()
     BoxLoops::loop(GammaCartoonCalculator(m_dx), m_state_new, m_state_new,
                    EXCLUDE_GHOST_CELLS, disable_simd());
 
+    // Phase frame: frame_theta = 0 (psi = phi), frame_omega from the initial
+    // data (in place: writes only the frame variables; the ghosts of
+    // frame_omega are filled by fillAllGhosts below). For the pure-gauge test,
+    // then set Theta_0(x) and rotate the field into that frame (pointwise).
+    if (m_p.phase_frame_params.use_phase_frame)
+    {
+        BoxLoops::loop(PhaseFrameInitialOmega(m_p.phase_frame_params, m_dx),
+                       m_state_new, m_state_new, EXCLUDE_GHOST_CELLS);
+        if (m_p.phase_frame_params.test_theta0 != 0.)
+            BoxLoops::loop(
+                PhaseFrameSetTestTheta(m_p.phase_frame_params, m_dx),
+                m_state_new, m_state_new, INCLUDE_GHOST_CELLS);
+    }
+
     BoxLoops::loop(ComputeWeightFunction(m_p.bosonstar_params, m_p.bosonstar2_params, m_dx), m_state_new, m_state_diagnostics, EXCLUDE_GHOST_CELLS, disable_simd());
 
     fillAllGhosts();
@@ -88,10 +106,14 @@ void ScalarField2DLevel::prePlotLevel()
 {
     fillAllGhosts();
     Potential potential(m_p.potential_params);
+    // diagnostics need the physical scalar field (identical to m_state_new
+    // when use_phase_frame = 0)
+    const GRLevelData &phys_state = physical_state();
     BoxLoops::loop(make_compute_pack(WeylOmScalar(m_p.extraction_params.center, m_dx), 
                                     Constraints<Potential>(m_dx, potential, m_p.m_G_Newton), 
                                    /* ADMQuantities(m_p.extraction_params.center, m_dx, 0),*/
-                                    NoetherCharge<FourthOrderDerivatives>(m_dx)), m_state_new, m_state_diagnostics, EXCLUDE_GHOST_CELLS);
+                                    NoetherCharge<FourthOrderDerivatives>(m_dx),
+                                    PhaseFrameCopyPhysical()), phys_state, m_state_diagnostics, EXCLUDE_GHOST_CELLS);
 }
 
 void ScalarField2DLevel::specificEvalRHS(GRLevelData &a_soln,
@@ -105,11 +127,40 @@ void ScalarField2DLevel::specificEvalRHS(GRLevelData &a_soln,
 
     // Calculate CCZ4 right hand side
     Potential potential(m_p.potential_params);
-    BoxLoops::loop(
-        CCZ4Cartoon<MovingPunctureGauge, FourthOrderDerivatives, Potential>(
-            m_p.ccz4_params, m_dx, m_p.sigma, potential, m_p.m_G_Newton,
-            m_p.formulation),
-        a_soln, a_rhs, EXCLUDE_GHOST_CELLS);
+    const PhaseFrame_params_t &frame_params = m_p.phase_frame_params;
+    if (!frame_params.use_phase_frame)
+    {
+        // original evolution; the frame variables stay at zero
+        a_rhs.setVal(0., Interval(c_frame_theta, c_frame_omega));
+        BoxLoops::loop(
+            CCZ4Cartoon<MovingPunctureGauge, FourthOrderDerivatives, Potential>(
+                m_p.ccz4_params, m_dx, m_p.sigma, potential, m_p.m_G_Newton,
+                m_p.formulation),
+            a_soln, a_rhs, EXCLUDE_GHOST_CELLS);
+    }
+    else
+    {
+        CCZ4CartoonPhaseFrame<MovingPunctureGauge, FourthOrderDerivatives,
+                              Potential>
+            frame_rhs(m_p.ccz4_params, m_dx, m_p.sigma, potential,
+                      m_p.m_G_Newton, frame_params, m_p.formulation);
+        if (frame_params.links)
+        {
+            // Link variables: give the RHS the physical field
+            // exp(i Theta) psi in every cell (incl. ghosts, which were filled
+            // with psi and Theta by the core), so all stencils act on the
+            // physical field; CCZ4CartoonPhaseFrame rotates the result back
+            // into the local frame.
+            GRLevelData phys_soln;
+            frame_to_physical(a_soln, phys_soln);
+            BoxLoops::loop(frame_rhs, phys_soln, a_rhs, EXCLUDE_GHOST_CELLS);
+        }
+        else
+        {
+            // continuum connection: works on psi directly
+            BoxLoops::loop(frame_rhs, a_soln, a_rhs, EXCLUDE_GHOST_CELLS);
+        }
+    }
 }
 
 void ScalarField2DLevel::specificUpdateODE(GRLevelData &a_soln,
@@ -123,9 +174,22 @@ void ScalarField2DLevel::computeTaggingCriterion(FArrayBox &tagging_criterion,
                                                  const FArrayBox &current_state,
                                                  const double a_maximum)
 {
-    BoxLoops::loop(ComplexPhiAndChiExtractionTaggingCriterion(m_dx, m_level,
+    ComplexPhiAndChiExtractionTaggingCriterion criterion(m_dx, m_level,
                    m_p.mass_extraction_params, m_p.regrid_threshold_phi,
-                   m_p.regrid_threshold_chi), current_state, tagging_criterion);
+                   m_p.regrid_threshold_chi);
+    if (!m_p.phase_frame_params.use_phase_frame)
+    {
+        BoxLoops::loop(criterion, current_state, tagging_criterion);
+    }
+    else
+    {
+        // the criterion uses derivatives of phi and Pi, which are not U(1)
+        // invariant: tag on the physical field so refinement is unchanged
+        FArrayBox phys_state(current_state.box(), current_state.nComp());
+        phys_state.copy(current_state);
+        BoxLoops::loop(PhaseFrameRotate(+1), phys_state, phys_state);
+        BoxLoops::loop(criterion, phys_state, tagging_criterion);
+    }
 }
 
 void ScalarField2DLevel::specificPostTimeStep()
@@ -137,13 +201,17 @@ void ScalarField2DLevel::specificPostTimeStep()
                         // called during setup at t=0 from Main
 
     fillAllGhosts();
+
+    // diagnostics need the physical scalar field (identical to m_state_new
+    // when use_phase_frame = 0)
+    const GRLevelData &phys_state = physical_state();
     
     Potential potential(m_p.potential_params);
     BoxLoops::loop(WeylOmScalar(m_p.extraction_params.center, m_dx),
-                           m_state_new, m_state_diagnostics,
+                           phys_state, m_state_diagnostics,
                            EXCLUDE_GHOST_CELLS);
     BoxLoops::loop(Constraints<Potential>(m_dx, potential, m_p.m_G_Newton),
-                       m_state_new, m_state_diagnostics, EXCLUDE_GHOST_CELLS);
+                       phys_state, m_state_diagnostics, EXCLUDE_GHOST_CELLS);
 
 
 #ifdef USE_AHFINDER
@@ -192,11 +260,11 @@ void ScalarField2DLevel::specificPostTimeStep()
 
     if (at_level_timestep_multiple(0))
     {
-        BoxLoops::loop(NoetherCharge<FourthOrderDerivatives>(m_dx), m_state_new, m_state_diagnostics,
+        BoxLoops::loop(NoetherCharge<FourthOrderDerivatives>(m_dx), phys_state, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
-        BoxLoops::loop(ADMQuantities(m_p.extraction_params.center, m_dx, 0), m_state_new, m_state_diagnostics,
+        BoxLoops::loop(ADMQuantities(m_p.extraction_params.center, m_dx, 0), phys_state, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
-	BoxLoops::loop(Constraints<Potential>(m_dx, potential, m_p.m_G_Newton), m_state_new, m_state_diagnostics,
+	BoxLoops::loop(Constraints<Potential>(m_dx, potential, m_p.m_G_Newton), phys_state, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
     }
 
@@ -270,6 +338,49 @@ void ScalarField2DLevel::specificPostTimeStep()
         }
         mod_phi_max_file.write_time_data_line({mod_phi_max});
 
+        // Phase frame: range of the frame frequency and phase over all levels
+        if (m_p.phase_frame_params.use_phase_frame &&
+            m_p.phase_frame_params.write_diagnostics)
+        {
+            const double omega_min = amr_reductions_evolution.min(c_frame_omega);
+            const double omega_max = amr_reductions_evolution.max(c_frame_omega);
+            const double theta_min = amr_reductions_evolution.min(c_frame_theta);
+            const double theta_max = amr_reductions_evolution.max(c_frame_theta);
+            SmallDataIO frame_file("frame_diagnostics", m_dt, m_time,
+                                   m_restart_time, SmallDataIO::APPEND,
+                                   first_step);
+            frame_file.remove_duplicate_time_data();
+            if (first_step)
+            {
+                frame_file.write_header_line(
+                    {"min Omega", "max Omega", "min Theta", "max Theta"});
+            }
+            frame_file.write_time_data_line(
+                {omega_min, omega_max, theta_min, theta_max});
+        }
+
     }
     
+}
+
+const GRLevelData &ScalarField2DLevel::physical_state()
+{
+    if (!m_p.phase_frame_params.use_phase_frame)
+        return m_state_new;
+    frame_to_physical(m_state_new, m_state_phys);
+    return m_state_phys;
+}
+
+void ScalarField2DLevel::frame_to_physical(const GRLevelData &a_frame,
+                                           GRLevelData &a_phys) const
+{
+    a_phys.define(a_frame.disjointBoxLayout(), a_frame.nComp(),
+                  a_frame.ghostVect());
+    // copy everything, including ghost cells
+    for (DataIterator dit = a_frame.dataIterator(); dit.ok(); ++dit)
+    {
+        a_phys[dit()].copy(a_frame[dit()]);
+    }
+    // rotate the matter slots, phi = exp(i Theta) psi, pointwise
+    BoxLoops::loop(PhaseFrameRotate(+1), a_phys, a_phys, INCLUDE_GHOST_CELLS);
 }

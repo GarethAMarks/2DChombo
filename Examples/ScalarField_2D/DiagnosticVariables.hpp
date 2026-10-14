@@ -29,13 +29,18 @@ enum
     c_Sx,
     c_Sy,
 
-    c_N, 
+    c_N,
     c_mod_phi,
     c_dt_mod_phi,
     c_gamma_tt,
 
     c_profile1,
     c_profile2,
+
+    // physical (lab-frame) scalar field exp(i frame_theta) psi; equal to
+    // phi/phi_Im when use_phase_frame = 0
+    c_phi_phys,
+    c_phi_Im_phys,
 
     // c_Sxx,
     // c_Sxy,
@@ -55,6 +60,9 @@ enum
 
 namespace DiagnosticVariables
 {
+// NB: one name per enum entry above, in the same order ("dt_mod_phi" and
+// "gamma_tt" were previously missing, which shifted "profile1"/"profile2" onto
+// the wrong variables)
 static const std::array<std::string, NUM_DIAGNOSTIC_VARS> variable_names = {
     "Ham",
 
@@ -66,10 +74,12 @@ static const std::array<std::string, NUM_DIAGNOSTIC_VARS> variable_names = {
 
     "rho",      "rho_ADM",  "Sx",  "Sy",
 
-    "N", "mod_phi",
+    "N", "mod_phi", "dt_mod_phi", "gamma_tt",
 
-    "profile1", "profile2"
-    
+    "profile1", "profile2",
+
+    "phi_phys", "phi_Im_phys"
+
     };
 // "Sxx",    "Sxy",    "Syy",
 // "Sww",      "S",        "Sxx_TF", "Sxy_TF", "Syy_TF", "Sww_TF"
