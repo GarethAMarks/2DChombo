@@ -124,6 +124,10 @@ public:
 
         read_phase_frame_params(pp);
 
+        // Charge projection of the KO dissipation of the scalar field
+        pp.load("ko_charge_projection", ko_charge_projection, false);
+        pp.load("ko_charge_projection_chi", ko_charge_projection_chi, true);
+
 
 #ifdef USE_AHFINDER
         pp.load("AH_set_origins_to_punctures", AH_set_origins_to_punctures,
@@ -187,6 +191,10 @@ public:
 
     void check_params()
     {
+        warn_parameter("ko_charge_projection", ko_charge_projection,
+                       !ko_charge_projection || sigma != 0.,
+                       "sigma = 0: no KO dissipation to project");
+
         const PhaseFrame_params_t &fp = phase_frame_params;
         if (fp.use_phase_frame)
         {
@@ -244,6 +252,8 @@ public:
     }
 
     PhaseFrame_params_t phase_frame_params;
+    bool ko_charge_projection;     //!< remove the charge-changing part of KO
+    bool ko_charge_projection_chi; //!< include KO of chi (charge weight)
 
     // tagging
     bool activate_extraction;

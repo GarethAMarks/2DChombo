@@ -44,6 +44,12 @@
 #include "CCZ4CartoonPhaseFrame.hpp"
 #include "PhaseFrameTools.hpp"
 
+// Charge projection of the KO dissipation
+#include "KOChargeProjection.hpp"
+#include "BoxIterator.H"
+#include "SPMD.H"
+#include <vector>
+
 void ScalarField2DLevel::specificAdvance()
 {
     // Enforce the trace free A_ij condition and positive chi and alpha
@@ -128,6 +134,9 @@ void ScalarField2DLevel::specificEvalRHS(GRLevelData &a_soln,
     // Calculate CCZ4 right hand side
     Potential potential(m_p.potential_params);
     const PhaseFrame_params_t &frame_params = m_p.phase_frame_params;
+    // the state the RHS (and its KO dissipation) was evaluated on
+    const GRLevelData *rhs_input = &a_soln;
+    GRLevelData phys_soln;
     if (!frame_params.use_phase_frame)
     {
         // original evolution; the frame variables stay at zero
@@ -151,9 +160,9 @@ void ScalarField2DLevel::specificEvalRHS(GRLevelData &a_soln,
             // with psi and Theta by the core), so all stencils act on the
             // physical field; CCZ4CartoonPhaseFrame rotates the result back
             // into the local frame.
-            GRLevelData phys_soln;
             frame_to_physical(a_soln, phys_soln);
             BoxLoops::loop(frame_rhs, phys_soln, a_rhs, EXCLUDE_GHOST_CELLS);
+            rhs_input = &phys_soln;
         }
         else
         {
@@ -161,6 +170,87 @@ void ScalarField2DLevel::specificEvalRHS(GRLevelData &a_soln,
             BoxLoops::loop(frame_rhs, a_soln, a_rhs, EXCLUDE_GHOST_CELLS);
         }
     }
+
+    // Remove the charge-changing part of the KO dissipation of the matter
+    if (m_p.ko_charge_projection && m_p.sigma != 0.)
+        ko_charge_projection(*rhs_input, a_soln, a_rhs);
+}
+
+void ScalarField2DLevel::ko_charge_projection(const GRLevelData &a_rhs_input,
+                                              const GRLevelData &a_soln,
+                                              GRLevelData &a_rhs)
+{
+    CH_TIME("ScalarField2DLevel::ko_charge_projection");
+
+    // per-cell charge rate of the dissipation and normalisation (see
+    // KOChargeProjection.hpp), from the field the dissipation acted on
+    GRLevelData dens;
+    dens.define(a_soln.disjointBoxLayout(), 2, IntVect::Zero);
+    BoxLoops::loop(KOChargeRateDensity(m_dx, m_p.sigma,
+                                       m_p.ko_charge_projection_chi),
+                   a_rhs_input, dens, EXCLUDE_GHOST_CELLS);
+
+    // only cells not covered by the next finer level count in the composite
+    // charge
+    std::vector<Box> covered;
+    if (m_finer_level_ptr != nullptr)
+    {
+        const Vector<Box> &fine_boxes = m_finer_level_ptr->boxes();
+        for (int i = 0; i < fine_boxes.size(); ++i)
+        {
+            Box b = fine_boxes[i];
+            b.coarsen(m_ref_ratio);
+            covered.push_back(b);
+        }
+    }
+
+    double sums[2] = {0.0, 0.0};
+    for (DataIterator dit = dens.dataIterator(); dit.ok(); ++dit)
+    {
+        const Box &valid = dens.disjointBoxLayout()[dit()];
+        FArrayBox mask(valid, 1);
+        mask.setVal(1.0);
+        for (const Box &c : covered)
+        {
+            const Box overlap = valid & c;
+            if (!overlap.isEmpty())
+                mask.setVal(0.0, overlap, 0, 1);
+        }
+        const FArrayBox &d = dens[dit()];
+        for (BoxIterator bit(valid); bit.ok(); ++bit)
+        {
+            const IntVect iv = bit();
+            sums[0] += mask(iv, 0) * d(iv, 0);
+            sums[1] += mask(iv, 0) * d(iv, 1);
+        }
+    }
+#ifdef CH_MPI
+    MPI_Allreduce(MPI_IN_PLACE, sums, 2, MPI_DOUBLE, MPI_SUM, Chombo_MPI::comm);
+#endif
+    if (!(sums[1] > 0.0))
+        return; // no field on the uncovered part of this level
+
+    // rhs -= lambda g,  g = (-Pi_Im, Pi, phi_Im, -phi) of the evolved state
+    const double lambda = sums[0] / sums[1];
+    for (DataIterator dit = a_rhs.dataIterator(); dit.ok(); ++dit)
+    {
+        const Box &valid = a_rhs.disjointBoxLayout()[dit()];
+        FArrayBox &r = a_rhs[dit()];
+        const FArrayBox &u = a_soln[dit()];
+        for (BoxIterator bit(valid); bit.ok(); ++bit)
+        {
+            const IntVect iv = bit();
+            r(iv, c_phi) += lambda * u(iv, c_Pi_Im);
+            r(iv, c_phi_Im) -= lambda * u(iv, c_Pi);
+            r(iv, c_Pi) -= lambda * u(iv, c_phi_Im);
+            r(iv, c_Pi_Im) += lambda * u(iv, c_phi);
+        }
+    }
+
+    if (m_verbosity)
+        pout() << "ScalarField2DLevel::ko_charge_projection: level " << m_level
+               << ", KO charge rate (uncovered, unnormalised) " << sums[0]
+               << ", lambda " << lambda << endl;
 }
 
 void ScalarField2DLevel::specificUpdateODE(GRLevelData &a_soln,

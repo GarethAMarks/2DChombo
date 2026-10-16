@@ -219,6 +219,17 @@ covariantZ4 = 1 # 0: keep kappa1; 1 [default]: replace kappa1 -> kappa1/lapse
 
 # coefficient for KO numerical dissipation
 sigma = 0.3
+# Charge projection of the KO dissipation of the complex scalar field
+# (Source/Matter/KOChargeProjection.hpp): KO acting on phi and Pi separately
+# changes the Noether charge, which shifts the stars' frequencies (dephasing).
+# With ko_charge_projection = 1 the matter RHS gets -lambda g, g = (i Pi, -i phi),
+# with lambda (one number per level and RHS evaluation, from the cells not
+# covered by a finer level) such that the dissipation leaves the charge
+# sum 2 pi y chi^{-3/2} (phi_Im Pi - phi Pi_Im) unchanged. Works with and
+# without the phase frame. ko_charge_projection_chi = 1 also compensates the
+# change of the charge weight chi^{-3/2} by KO acting on chi.
+ko_charge_projection = 0
+ko_charge_projection_chi = 1
 calculate_constraint_norms = true
 # min_chi = 1.e-4
 # min_lapse = 1.e-4

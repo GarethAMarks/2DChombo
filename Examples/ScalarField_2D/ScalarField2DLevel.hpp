@@ -65,6 +65,14 @@ class ScalarField2DLevel : public GRAMRLevel
     /// ghost cells (a_phys is (re)defined on a_frame's layout)
     void frame_to_physical(const GRLevelData &a_frame,
                            GRLevelData &a_phys) const;
+
+    /// Charge projection of the KO dissipation of the scalar field (see
+    /// Source/Matter/KOChargeProjection.hpp): a_rhs -= lambda g(a_soln), with
+    /// lambda such that the dissipation does not change the Noether charge on
+    /// the cells of this level not covered by a finer level. a_rhs_input is the
+    /// state the RHS and its KO term were computed from.
+    void ko_charge_projection(const GRLevelData &a_rhs_input,
+                              const GRLevelData &a_soln, GRLevelData &a_rhs);
 };
 
 #endif /* BLACKSTRINGLEVEL_HPP_ */
