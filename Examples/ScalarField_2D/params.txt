@@ -230,6 +230,15 @@ sigma = 0.3
 # change of the charge weight chi^{-3/2} by KO acting on chi.
 ko_charge_projection = 0
 ko_charge_projection_chi = 1
+# Axis-corrected Noether charge (Source/Matter/AxisChargeWeight.hpp): the
+# cartoon sum 2 pi y chi^{-3/2} (phi_Im Pi - phi Pi_Im) dx^2 is the midpoint rule
+# in y for an integrand linear at the axis, so it is only 2nd-order accurate
+# and drifts at O(dx^2) whenever the field near the axis changes, even if the
+# evolution conserves the charge to 4th order. With axis_corrected_charge = 1
+# the weights of the three cells next to the axis get the Euler-Maclaurin
+# correction (4th-order accurate sum). Changes the NoetherCharge output (and
+# the weights used by ko_charge_projection); 0 reproduces the old values.
+axis_corrected_charge = 1
 calculate_constraint_norms = true
 # min_chi = 1.e-4
 # min_lapse = 1.e-4

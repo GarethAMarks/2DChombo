@@ -128,6 +128,9 @@ public:
         pp.load("ko_charge_projection", ko_charge_projection, false);
         pp.load("ko_charge_projection_chi", ko_charge_projection_chi, true);
 
+        // 4th-order (axis-corrected) Noether-charge weights
+        pp.load("axis_corrected_charge", axis_corrected_charge, false);
+
 
 #ifdef USE_AHFINDER
         pp.load("AH_set_origins_to_punctures", AH_set_origins_to_punctures,
@@ -254,6 +257,7 @@ public:
     PhaseFrame_params_t phase_frame_params;
     bool ko_charge_projection;     //!< remove the charge-changing part of KO
     bool ko_charge_projection_chi; //!< include KO of chi (charge weight)
+    bool axis_corrected_charge; //!< Euler-Maclaurin axis correction of N
 
     // tagging
     bool activate_extraction;

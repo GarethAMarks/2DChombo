@@ -6,6 +6,7 @@
 #ifndef NOETHERCHARGE_HPP_
 #define NOETHERCHARGE_HPP_
 
+#include "AxisChargeWeight.hpp"
 #include "ComplexScalarField.hpp"
 #include "ADMConformalVars.hpp" // needed for CCz4 and matter variables
 #include "FourthOrderDerivatives.hpp"
@@ -21,6 +22,7 @@ class NoetherCharge
 {
 protected:
     deriv_t m_deriv;
+    bool m_axis_correction;
 
     // Need matter variables and chi
     template <class data_t> using Vars
@@ -28,7 +30,13 @@ protected:
 
 public:
 
-    NoetherCharge(const double a_dx) : m_deriv(a_dx) {}
+    /// a_axis_correction: apply the Euler-Maclaurin axis correction to the
+    /// charge weights of the three cells next to the axis (see
+    /// AxisChargeWeight.hpp), making the summed charge 4th-order accurate
+    NoetherCharge(const double a_dx, const bool a_axis_correction = false)
+        : m_deriv(a_dx), m_axis_correction(a_axis_correction)
+    {
+    }
 
     template <class data_t> void compute(Cell<data_t> current_cell) const
     {
@@ -46,6 +54,8 @@ public:
         // calculate Noether charge, accounting for measure change in plane
         data_t N = pow(vars.chi, -1.5) * (vars.phi_Im
             * vars.Pi - vars.phi * vars.Pi_Im) * 2. * M_PI * coords.y;
+        if (m_axis_correction)
+            N = N * axis_weight_factor(coords.y, m_deriv.m_dx);
         
         //Calculate modulus of the scalar field
         data_t mod_phi = sqrt(vars.phi * vars.phi
