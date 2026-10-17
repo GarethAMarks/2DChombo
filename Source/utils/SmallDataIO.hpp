@@ -37,7 +37,11 @@ class SmallDataIO
     const bool m_first_step; // this should be set to true if this is the first
                              // timestep
     static const std::string s_default_file_extension;
-    static constexpr int s_default_data_precision = 10;
+    // 16 digits after the point in scientific notation = 17 significant
+    // digits: every double is written exactly (round-trips), so small
+    // changes of nearly conserved quantities (e.g. NoetherCharge) are not
+    // hidden by the output (was 10)
+    static constexpr int s_default_data_precision = 16;
     const int m_data_precision;
     const int m_data_width;
     const double m_data_epsilon; //!< the maximum data precision error
