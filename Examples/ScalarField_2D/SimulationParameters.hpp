@@ -21,6 +21,7 @@
 
 // U(1) phase frame for the scalar field
 #include "BoundaryConditions.hpp"
+#include "AxisChargeWeight.hpp"
 #include "PhaseFrameParams.hpp"
 #include <algorithm>
 #include <cmath>
@@ -131,6 +132,10 @@ public:
         // 4th-order (axis-corrected) Noether-charge weights
         pp.load("axis_corrected_charge", axis_corrected_charge, false);
 
+        // Klein-Gordon operator options (see CCZ4Cartoon::set_KG_options)
+        pp.load("KG_computed_Gamma", KG_computed_Gamma, true);
+        pp.load("KG_flux_form", KG_flux_form, false);
+
 
 #ifdef USE_AHFINDER
         pp.load("AH_set_origins_to_punctures", AH_set_origins_to_punctures,
@@ -198,6 +203,26 @@ public:
                        !ko_charge_projection || sigma != 0.,
                        "sigma = 0: no KO dissipation to project");
 
+        if (KG_flux_form)
+        {
+            // the flux form acts on the physical field and closes at a
+            // reflective axis at y = 0 (the lower y boundary)
+            check_parameter("KG_flux_form", KG_flux_form,
+                            !phase_frame_params.use_phase_frame ||
+                                phase_frame_params.links,
+                            "needs frame_links = 1 with use_phase_frame = 1");
+            check_parameter("KG_flux_form", KG_flux_form,
+                            boundary_params.lo_boundary[1] ==
+                                BoundaryConditions::REFLECTIVE_BC,
+                            "needs a reflective lower y boundary (the axis)");
+            check_parameter("KG_flux_form", KG_flux_form, num_ghosts >= 3,
+                            "needs num_ghosts >= 3");
+            warn_parameter("axis_corrected_charge", axis_corrected_charge,
+                           axis_corrected_charge,
+                           "ignored with KG_flux_form = 1: the charge always "
+                           "uses the flux-form weights");
+        }
+
         const PhaseFrame_params_t &fp = phase_frame_params;
         if (fp.use_phase_frame)
         {
@@ -258,6 +283,19 @@ public:
     bool ko_charge_projection;     //!< remove the charge-changing part of KO
     bool ko_charge_projection_chi; //!< include KO of chi (charge weight)
     bool axis_corrected_charge; //!< Euler-Maclaurin axis correction of N
+    bool KG_computed_Gamma; //!< KG uses metric-computed Christoffels (not Gamma^i)
+    bool KG_flux_form;      //!< exactly charge-conserving flux-form KG operator
+
+    /// Axis weights of the Noether charge (and the KO charge projection):
+    /// the flux-form weights with KG_flux_form (needed for exact
+    /// conservation), else Euler-Maclaurin if axis_corrected_charge, else none
+    int charge_weight_mode() const
+    {
+        if (KG_flux_form)
+            return AxisWeight::flux_form;
+        return axis_corrected_charge ? AxisWeight::euler_maclaurin
+                                     : AxisWeight::none;
+    }
 
     // tagging
     bool activate_extraction;

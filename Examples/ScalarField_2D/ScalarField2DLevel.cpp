@@ -118,7 +118,7 @@ void ScalarField2DLevel::prePlotLevel()
     BoxLoops::loop(make_compute_pack(WeylOmScalar(m_p.extraction_params.center, m_dx), 
                                     Constraints<Potential>(m_dx, potential, m_p.m_G_Newton), 
                                    /* ADMQuantities(m_p.extraction_params.center, m_dx, 0),*/
-                                    NoetherCharge<FourthOrderDerivatives>(m_dx, m_p.axis_corrected_charge),
+                                    NoetherCharge<FourthOrderDerivatives>(m_dx, m_p.charge_weight_mode()),
                                     PhaseFrameCopyPhysical()), phys_state, m_state_diagnostics, EXCLUDE_GHOST_CELLS);
 }
 
@@ -141,11 +141,11 @@ void ScalarField2DLevel::specificEvalRHS(GRLevelData &a_soln,
     {
         // original evolution; the frame variables stay at zero
         a_rhs.setVal(0., Interval(c_frame_theta, c_frame_omega));
-        BoxLoops::loop(
-            CCZ4Cartoon<MovingPunctureGauge, FourthOrderDerivatives, Potential>(
-                m_p.ccz4_params, m_dx, m_p.sigma, potential, m_p.m_G_Newton,
-                m_p.formulation),
-            a_soln, a_rhs, EXCLUDE_GHOST_CELLS);
+        CCZ4Cartoon<MovingPunctureGauge, FourthOrderDerivatives, Potential>
+            ccz4_rhs(m_p.ccz4_params, m_dx, m_p.sigma, potential,
+                     m_p.m_G_Newton, m_p.formulation);
+        ccz4_rhs.set_KG_options(m_p.KG_computed_Gamma, m_p.KG_flux_form);
+        BoxLoops::loop(ccz4_rhs, a_soln, a_rhs, EXCLUDE_GHOST_CELLS);
     }
     else
     {
@@ -153,6 +153,7 @@ void ScalarField2DLevel::specificEvalRHS(GRLevelData &a_soln,
                               Potential>
             frame_rhs(m_p.ccz4_params, m_dx, m_p.sigma, potential,
                       m_p.m_G_Newton, frame_params, m_p.formulation);
+        frame_rhs.set_KG_options(m_p.KG_computed_Gamma, m_p.KG_flux_form);
         if (frame_params.links)
         {
             // Link variables: give the RHS the physical field
@@ -188,7 +189,7 @@ void ScalarField2DLevel::ko_charge_projection(const GRLevelData &a_rhs_input,
     dens.define(a_soln.disjointBoxLayout(), 2, IntVect::Zero);
     BoxLoops::loop(KOChargeRateDensity(m_dx, m_p.sigma,
                                        m_p.ko_charge_projection_chi,
-                                       m_p.axis_corrected_charge),
+                                       m_p.charge_weight_mode()),
                    a_rhs_input, dens, EXCLUDE_GHOST_CELLS);
 
     // only cells not covered by the next finer level count in the composite
@@ -351,7 +352,7 @@ void ScalarField2DLevel::specificPostTimeStep()
 
     if (at_level_timestep_multiple(0))
     {
-        BoxLoops::loop(NoetherCharge<FourthOrderDerivatives>(m_dx, m_p.axis_corrected_charge), phys_state, m_state_diagnostics,
+        BoxLoops::loop(NoetherCharge<FourthOrderDerivatives>(m_dx, m_p.charge_weight_mode()), phys_state, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);
         BoxLoops::loop(ADMQuantities(m_p.extraction_params.center, m_dx, 0), phys_state, m_state_diagnostics,
                   EXCLUDE_GHOST_CELLS);

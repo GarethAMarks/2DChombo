@@ -116,6 +116,9 @@ class CCZ4CartoonPhaseFrame
         // local frame), and KO on whatever the input box holds
         Vars<data_t> rhs;
         this->rhs_equation(rhs, vars, d1, d2, advec, coords.y);
+        // flux-form Klein-Gordon operator (KG_flux_form; links mode only, on
+        // the physical field)
+        this->add_KG_flux_form(rhs, current_cell, coords.y);
         this->m_deriv.add_dissipation(rhs, current_cell, this->m_sigma);
 
         // psi, P and the local-frame time derivatives exp(-i Theta) d_t phi

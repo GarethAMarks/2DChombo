@@ -22,7 +22,7 @@ class NoetherCharge
 {
 protected:
     deriv_t m_deriv;
-    bool m_axis_correction;
+    int m_axis_weight_mode; //!< AxisWeight::none, euler_maclaurin or flux_form
 
     // Need matter variables and chi
     template <class data_t> using Vars
@@ -30,11 +30,13 @@ protected:
 
 public:
 
-    /// a_axis_correction: apply the Euler-Maclaurin axis correction to the
-    /// charge weights of the three cells next to the axis (see
-    /// AxisChargeWeight.hpp), making the summed charge 4th-order accurate
-    NoetherCharge(const double a_dx, const bool a_axis_correction = false)
-        : m_deriv(a_dx), m_axis_correction(a_axis_correction)
+    /// a_axis_weight_mode: axis correction of the charge weights of the cells
+    /// next to the axis (see AxisChargeWeight.hpp), making the summed charge
+    /// 4th-order accurate: AxisWeight::none (0), euler_maclaurin (1, also what
+    /// "true" gives) or flux_form (2, required with KG_flux_form = 1)
+    NoetherCharge(const double a_dx,
+                  const int a_axis_weight_mode = AxisWeight::none)
+        : m_deriv(a_dx), m_axis_weight_mode(a_axis_weight_mode)
     {
     }
 
@@ -54,8 +56,9 @@ public:
         // calculate Noether charge, accounting for measure change in plane
         data_t N = pow(vars.chi, -1.5) * (vars.phi_Im
             * vars.Pi - vars.phi * vars.Pi_Im) * 2. * M_PI * coords.y;
-        if (m_axis_correction)
-            N = N * axis_weight_factor(coords.y, m_deriv.m_dx);
+        if (m_axis_weight_mode != AxisWeight::none)
+            N = N * axis_weight_factor(coords.y, m_deriv.m_dx,
+                                       m_axis_weight_mode);
         
         //Calculate modulus of the scalar field
         data_t mod_phi = sqrt(vars.phi * vars.phi

@@ -24,7 +24,7 @@ inline CCZ4Cartoon<gauge_t, deriv_t, potential_t>::CCZ4Cartoon(
         double cosmological_constant)
         : CCZ4RHS<gauge_t, deriv_t>(params, dx, sigma, formulation,
                                     cosmological_constant),
-          m_potential(a_potential), m_G_Newton(a_G_Newton)
+          m_potential(a_potential), m_G_Newton(a_G_Newton), m_flux_KG(dx)
 {
 }
 
@@ -113,6 +113,7 @@ void CCZ4Cartoon<gauge_t, deriv_t, potential_t>::compute(Cell<data_t> current_ce
     Vars<data_t> rhs;
     CCZ4Cartoon<gauge_t, deriv_t>::rhs_equation(rhs, vars, d1, d2, advec,
                                                 coords.y);
+    this->add_KG_flux_form(rhs, current_cell, coords.y);
 
     this->m_deriv.add_dissipation(rhs, current_cell, this->m_sigma);
 
@@ -422,8 +423,18 @@ rhs.phi_Im = -vars.lapse * vars.Pi_Im + advec.phi_Im;
 // 7th term + 1st term + 6th term + potential term
 rhs.Pi = vars.lapse * vars.K * vars.Pi
          + advec.Pi
-         -vars.lapse * vars.chi * h_UU_ww * d1.phi[dI] * one_over_cartoon_coord
          +vars.lapse * dVdmodulus_phi_squared * vars.phi;
+
+// contracted Christoffels in the Klein-Gordon operator: computed from the
+// metric (default) or the evolved Gamma^i (see set_KG_options)
+const Tensor<1, data_t> &KG_Gamma =
+        m_KG_computed_Gamma ? chris_contracted : vars.Gamma;
+
+// spatial operator acting on phi (product rule); with KG_flux_form it is
+// added by add_KG_flux_form instead
+if (!m_KG_flux_form)
+{
+rhs.Pi += -vars.lapse * vars.chi * h_UU_ww * d1.phi[dI] * one_over_cartoon_coord;
 
 // 2nd term + 4th term +  5th term
 FOR(i, j)
@@ -437,7 +448,8 @@ rhs.Pi += h_UU[i][j] * (-vars.chi * d1.lapse[j] * d1.phi[i]
 
 
 // the 3rd term
-FOR(i) { rhs.Pi += vars.chi * vars.lapse * vars.Gamma[i] * d1.phi[i]; }
+FOR(i) { rhs.Pi += vars.chi * vars.lapse * KG_Gamma[i] * d1.phi[i]; }
+}
 // the 8th term
 //rhs.Pi += vars.lapse * dVdphi;
 //std::cout << "rhs.Pi"<<rhs.Pi<<std::endl;
@@ -450,8 +462,11 @@ FOR(i) { rhs.Pi += vars.chi * vars.lapse * vars.Gamma[i] * d1.phi[i]; }
 // 7th term + 1st term + 6th term + potential term
 rhs.Pi_Im = vars.lapse * vars.K * vars.Pi_Im
             + advec.Pi_Im
-            - vars.lapse * vars.chi * h_UU_ww * d1.phi_Im[dI] * one_over_cartoon_coord
             + vars.lapse * dVdmodulus_phi_squared * vars.phi_Im;
+
+if (!m_KG_flux_form)
+{
+rhs.Pi_Im += - vars.lapse * vars.chi * h_UU_ww * d1.phi_Im[dI] * one_over_cartoon_coord;
 
 // 2nd term + 4th term +  5th term
 FOR(i, j)
@@ -465,7 +480,8 @@ rhs.Pi_Im += h_UU[i][j] * (-vars.chi * d1.lapse[j] * d1.phi_Im[i]
 
 
 // the 3rd term
-FOR(i) { rhs.Pi_Im += vars.chi * vars.lapse * vars.Gamma[i] * d1.phi_Im[i]; }
+FOR(i) { rhs.Pi_Im += vars.chi * vars.lapse * KG_Gamma[i] * d1.phi_Im[i]; }
+}
 
 //std::cout << "rhs.Pi_Im"<<rhs.Pi_Im<<std::endl;
 // the 8th term

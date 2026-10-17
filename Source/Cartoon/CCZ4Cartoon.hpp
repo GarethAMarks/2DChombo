@@ -12,6 +12,7 @@
 #include "CCZ4RHS.hpp"
 #include "Cell.hpp"
 #include "Coordinates.hpp"
+#include "FluxFormKGCartoon.hpp"
 #include "FourthOrderDerivatives.hpp"
 #include "Tensor.hpp"
 #include "TensorAlgebra.hpp"
@@ -59,6 +60,26 @@ class CCZ4Cartoon : public CCZ4RHS<gauge_t>
 
     // ScalarBubble_2D::params_t m_bubble_params;
 
+    /// Options for the Klein-Gordon operator of the complex scalar field
+    /**
+     * computed_Gamma (default true): the contracted conformal Christoffel
+     *   symbols in the Pi equation are computed from the metric
+     *   (chris_contracted, including the cartoon part) as in the 3D
+     *   ComplexScalarField; false uses the evolved Gamma^i (the original
+     *   cartoon code). The two differ by 2 Z^i / chi, a constraint term that
+     *   breaks the conservation of the Noether charge even in the continuum.
+     * flux_form (default false): replace all the second-order (phi-derivative)
+     *   terms of the Pi equation by the exactly charge-conserving flux form of
+     *   FluxFormKGCartoon.hpp (computed_Gamma is then irrelevant). Requires the
+     *   charge weights AxisWeight::flux_form, and the physical field in the
+     *   input box (frame_links = 1 in the phase frame).
+     */
+    void set_KG_options(const bool a_computed_Gamma, const bool a_flux_form)
+    {
+        m_KG_computed_Gamma = a_computed_Gamma;
+        m_KG_flux_form = a_flux_form;
+    }
+
     /// Compute function
     /** This function orchestrates the calculation of the rhs for one specific
      * grid cell. This function is called by the BoxLoops::loop for each grid
@@ -86,7 +107,25 @@ class CCZ4Cartoon : public CCZ4RHS<gauge_t>
         const vars_t<data_t>
             &advec, //!< The advection derivatives of the variables
         const double &cartoon_coord) const; //!< cartoon radial coordinate
-    
+
+    /// Adds the flux-form Klein-Gordon operator to rhs.Pi and rhs.Pi_Im if
+    /// flux_form is set (rhs_equation then leaves those terms out)
+    template <class data_t, template <typename> class vars_t>
+    void add_KG_flux_form(vars_t<data_t> &rhs, const Cell<data_t> &current_cell,
+                          const double &cartoon_coord) const
+    {
+        if (!m_KG_flux_form)
+            return;
+        data_t L_re, L_im;
+        m_flux_KG.compute(current_cell, cartoon_coord, L_re, L_im);
+        rhs.Pi += L_re;
+        rhs.Pi_Im += L_im;
+    }
+
+    bool m_KG_computed_Gamma = true; //!< see set_KG_options
+    bool m_KG_flux_form = false;     //!< see set_KG_options
+    FluxFormKGCartoon m_flux_KG;
+
     const double m_G_Newton;
     const potential_t m_potential;
 };

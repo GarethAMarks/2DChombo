@@ -80,9 +80,9 @@ class KOChargeRateDensity
   public:
     KOChargeRateDensity(const double a_dx, const double a_sigma,
                         const bool a_include_chi,
-                        const bool a_axis_correction = false)
+                        const int a_axis_weight_mode = AxisWeight::none)
         : m_deriv(a_dx), m_sigma(a_sigma), m_include_chi(a_include_chi),
-          m_axis_correction(a_axis_correction)
+          m_axis_weight_mode(a_axis_weight_mode)
     {
     }
 
@@ -98,8 +98,9 @@ class KOChargeRateDensity
         Coordinates<data_t> coords(current_cell, m_deriv.m_dx);
         const data_t &chi = u.chi;                     // as in NoetherCharge
         data_t w = coords.y * pow(chi, -1.5);
-        if (m_axis_correction) // same weights as the axis-corrected charge
-            w = w * axis_weight_factor(coords.y, m_deriv.m_dx);
+        if (m_axis_weight_mode != AxisWeight::none) // same weights as the charge
+            w = w * axis_weight_factor(coords.y, m_deriv.m_dx,
+                                       m_axis_weight_mode);
 
         const data_t q = u.phi_Im * u.Pi - u.phi * u.Pi_Im;
         // dq/du . D  for u = (phi, phi_Im, Pi, Pi_Im)
@@ -120,7 +121,7 @@ class KOChargeRateDensity
     const FourthOrderDerivatives m_deriv;
     const double m_sigma;
     const bool m_include_chi;
-    const bool m_axis_correction;
+    const int m_axis_weight_mode;
 };
 
 #endif /* KOCHARGEPROJECTION_HPP_ */

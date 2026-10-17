@@ -238,7 +238,25 @@ ko_charge_projection_chi = 1
 # the weights of the three cells next to the axis get the Euler-Maclaurin
 # correction (4th-order accurate sum). Changes the NoetherCharge output (and
 # the weights used by ko_charge_projection); 0 reproduces the old values.
+# Ignored with KG_flux_form = 1, which needs its own weights (see below).
 axis_corrected_charge = 1
+# Klein-Gordon operator of the complex scalar field (Source/Cartoon/CCZ4Cartoon.hpp)
+# KG_computed_Gamma = 1: the contracted Christoffels in the Pi equation are
+#   computed from the metric (including the cartoon part), as in the 3D
+#   ComplexScalarField. 0: use the evolved Gamma^i (the original cartoon code),
+#   which differs by 2 Z^i / chi and breaks charge conservation even in the
+#   continuum (an error proportional to the Z constraint violation).
+KG_computed_Gamma = 1
+# KG_flux_form = 1: replace the second-order terms of the Pi equation by the
+#   exactly charge-conserving flux form (Source/Cartoon/FluxFormKGCartoon.hpp):
+#   the spatial operator then conserves the discrete Noether charge to round-off
+#   on each level (coarse-fine ghost interpolation is still not conservative),
+#   is 4th-order accurate up to the axis, and uses no metric derivatives.
+#   The charge weights (NoetherCharge output and ko_charge_projection) switch to
+#   the flux-form ones: y_0 -> (11/12) y_0 in the first cell row, all others y.
+#   Needs frame_links = 1 if use_phase_frame = 1, the reflective lower y
+#   boundary (axis) and num_ghosts >= 3. KG_computed_Gamma is then irrelevant.
+KG_flux_form = 0
 calculate_constraint_norms = true
 # min_chi = 1.e-4
 # min_lapse = 1.e-4
