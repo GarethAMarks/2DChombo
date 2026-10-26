@@ -28,6 +28,8 @@ enum
 
     c_N,       // particle-number integrand n chi^{-3/2} 2 pi y (both spinors)
     c_mod_psi, // sqrt(4 pi psi^dag psi): equals A_central = g(0) at the centre of the initial star
+    c_n,       // particle number density of both spinors (n = -n_mu J^mu)
+    c_n_psi,   // number density of each spinor field, psi^dag psi = n / 2
 
     NUM_DIAGNOSTIC_VARS
 };
@@ -36,7 +38,7 @@ namespace DiagnosticVariables
 {
 static const std::array<std::string, NUM_DIAGNOSTIC_VARS> variable_names = {
     "Ham", "Mom1", "Mom2", "Mom", "Weyl4_Re", "Weyl4_Im", "M_adm", "P_adm",
-    "rho", "rho_ADM", "Sx", "Sy", "N", "mod_psi"};
+    "rho", "rho_ADM", "Sx", "Sy", "N", "mod_psi", "n", "n_psi"};
 } // namespace DiagnosticVariables
 
 #endif /* DIAGNOSTICVARIABLES_HPP */

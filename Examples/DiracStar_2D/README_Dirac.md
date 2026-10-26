@@ -10,7 +10,7 @@ signature (-,+,+,+).
 |---|---|
 | `Source/Matter/DiracFieldCartoon.hpp` | Spinor variables, 3+1 Dirac right-hand side and stress tensor on the cartoon plane |
 | `Source/Cartoon/CCZ4CartoonDirac.hpp` | CCZ4 cartoon RHS with Dirac matter |
-| `Source/Cartoon/ConstraintsCartoonDirac.hpp` | Ham/Mom with Dirac sources; also `N` (particle-number integrand) and `mod_psi` |
+| `Source/Cartoon/ConstraintsCartoonDirac.hpp` | Ham/Mom with Dirac sources; also the diagnostics `n`, `n_psi`, `N` and `mod_psi` (see below) |
 | `Source/Cartoon/CCZ4CartoonBase.hpp`, `ConstraintsCartoonBase.hpp` | Vacuum CCZ4 cartoon RHS/constraints, now shared by the scalar and Dirac versions (moved verbatim out of `CCZ4Cartoon` / `ConstraintsCartoon`; the scalar-field RHS and constraints are bit-identical to before) |
 | `Source/InitialConditions/DiracStars/DiracStarSolution.hpp` | Port of the 1D Dirac star solver (shooting, isotropic transformation, Gaussian perturbation) |
 | `Source/InitialConditions/DiracStars/DiracStar.hpp` | Sets the 2D initial data from the 1D solution: a single star at rest or boosted along the axis, or a head-on binary along the axis |
@@ -136,6 +136,19 @@ From `family/plot_family.py`:
   - S1 (A = 0.05) and S2 (0.15) are stationary.
   - U1 (0.30) and U2 (0.40) collapse for a perturbation a = +0.01 and migrate to the stable branch for a = -0.01.
   - U3 (0.60, unbound) collapses.
+
+## Diagnostics
+
+All of these are plottable (`plot_vars`). The `n` variables are the particle number density measured by the normal
+observers, n = -n_mu J^mu = psi^dag psi summed over the spinors.
+
+| Name | Meaning |
+|---|---|
+| `n` | number density of both spinor fields |
+| `n_psi` | number density of each spinor field: the evolved spinor and its mirror image have equal densities on the cartoon plane, so n = 2 n_psi |
+| `N` | n chi^{-3/2} 2 pi y, the integrand summed into `ParticleNumber` |
+| `mod_psi` | sqrt(2 pi n), which equals A_central at the centre of a star at rest |
+| `rho` | energy density |
 
 ## Running
 

@@ -15,7 +15,11 @@
  *   N       = n chi^{-3/2} 2 pi y,  the integrand of the particle number of both spinors (sum it as c_N is summed for the
  *             boson stars: N = int n sqrt(gamma) d^3x),
  *   mod_psi = sqrt(4 pi psi^dag psi), which equals the 1D solver's central amplitude A_central = g(0) at the centre of
- *             the unperturbed star (so max mod_psi tracks the central amplitude like max mod_phi for boson stars).
+ *             the unperturbed star (so max mod_psi tracks the central amplitude like max mod_phi for boson stars),
+ *   n       = the particle number density of both spinors measured by the normal observers (n = -n_mu J^mu; the
+ *             particle number is int n sqrt(gamma) d^3x),
+ *   n_psi   = psi^dag psi, the number density of each spinor field: the evolved J_x = +1/2 spinor and its mirror image
+ *             (the J_x = -1/2 spinor) have the same density on the cartoon plane, so n = 2 n_psi.
  * The energy density needs n^a nabla_a psi, which is eliminated with the Dirac equation, so the lapse and shift (and
  * K_ij) are loaded too.
  **/
@@ -56,6 +60,8 @@ class ConstraintsCartoonDirac : public ConstraintsCartoonBase
         const data_t N = src.n * pow(vars.chi, -1.5) * 2. * M_PI * coords.y;
         current_cell.store_vars(N, c_N);
         current_cell.store_vars(sqrt(2. * M_PI * src.n), c_mod_psi);
+        current_cell.store_vars(src.n, c_n);
+        current_cell.store_vars(0.5 * src.n, c_n_psi);
     }
 
   protected:

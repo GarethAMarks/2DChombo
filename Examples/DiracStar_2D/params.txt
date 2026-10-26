@@ -21,8 +21,8 @@ checkpoint_interval = 300
 # set to 0 to turn off plot files (except at t=0 and t=stop_time)
 # set to -1 to never ever print plotfiles
 plot_interval = 50
-num_plot_vars = 9
-plot_vars = psi0_Re psi0_Im psi2_Im psi3_Im mod_psi chi lapse Ham rho
+num_plot_vars = 10
+plot_vars = psi0_Re psi0_Im psi2_Im psi3_Im mod_psi n chi lapse Ham rho
 
 # subpaths - specific directories for hdf5, pout, extraction data
 # (these are created at runtime)
@@ -122,6 +122,7 @@ vars_parity_diagnostic = 0 1 2 0     # Ham and Mom
                          0 0         # ADM M and P
                          0 0 1 2     # rho, rho_ADM, Sx, Sy
                          2 0         # N (integrand, ~ y), mod_psi
+                         0 0         # n, n_psi
 
 # if sommerfeld boundaries selected, must select
 # asymptotic values
