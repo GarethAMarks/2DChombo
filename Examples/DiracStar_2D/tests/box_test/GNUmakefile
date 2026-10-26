@@ -20,5 +20,6 @@ src_dirs := $(GRCHOMBO_SOURCE)/utils \
             $(GRCHOMBO_SOURCE)/BoxUtils  \
             $(GRCHOMBO_SOURCE)/GRChomboCore  \
             $(GRCHOMBO_SOURCE)/AMRInterpolator  \
-            $(GRCHOMBO_SOURCE)/InitialConditions/DiracStars
+            $(GRCHOMBO_SOURCE)/InitialConditions/DiracStars \
+            $(GRCHOMBO_SOURCE)/InitialConditions/BosonStars
 include $(CHOMBO_HOME)/mk/Make.test

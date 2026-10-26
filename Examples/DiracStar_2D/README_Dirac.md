@@ -13,7 +13,8 @@ signature (-,+,+,+).
 | `Source/Cartoon/ConstraintsCartoonDirac.hpp` | Ham/Mom with Dirac sources; also `N` (particle-number integrand) and `mod_psi` |
 | `Source/Cartoon/CCZ4CartoonBase.hpp`, `ConstraintsCartoonBase.hpp` | Vacuum CCZ4 cartoon RHS/constraints, now shared by the scalar and Dirac versions (moved verbatim out of `CCZ4Cartoon` / `ConstraintsCartoon`; the scalar-field RHS and constraints are bit-identical to before) |
 | `Source/InitialConditions/DiracStars/DiracStarSolution.hpp` | Port of the 1D Dirac star solver (shooting, isotropic transformation, Gaussian perturbation) |
-| `Source/InitialConditions/DiracStars/DiracStar.hpp` | Sets the 2D initial data from the 1D solution |
+| `Source/InitialConditions/DiracStars/DiracStar.hpp` | Sets the 2D initial data from the 1D solution: a single star at rest or boosted along the axis, or a head-on binary along the axis |
+| `Source/InitialConditions/DiracStars/DiracStarBoost.hpp` | Boosted star: lab metric, lapse, shift and K_ij as for the boson stars, plus the spinor transformation (shared with ExoZvezda) |
 | `Source/TaggingCriteria/DiracAndChiExtractionTaggingCriterion.hpp` | Tagging on the spinor and chi, as for the scalar field |
 | `Examples/DiracStar_2D/` | Level, parameters (`params.txt`), variables |
 | `derivations/` | Python derivation checks of the equations (`check_dirac_cartoon.py`) and the reference implementation (`dirac_ref.py`) |
@@ -87,9 +88,40 @@ slice data.
 
   All of these converge at 4th order. For the perturbed star, d_t psi stays at a resolution-independent 1.6e-3, as it
   should.
+- **Boosted star (rapidity 0.3, `box_test` mode 1, 1D solution with 80001 points):** d_t psi equals the exact
+  derivative of the moving solution, and Ham and Mom converge:
+
+  | Quantity | dx = 0.1 | dx = 0.05 | factor |
+  |---|---|---|---|
+  | d_t psi error | 6.3e-7 | 3.9e-8 | 16.4 |
+  | Ham / 16 pi rho | 1.3e-6 | 8.1e-8 | 16.0 |
+  | Mom | 6.1e-8 | 3.8e-9 | 15.9 |
+
+  The default 20001 points leave a floor of about 1e-8 from the interpolated psi' and alpha'.
+- **Head-on binary (mode 2):** for all three `id_choice` options the data are exactly mirror-symmetric,
+  psi(-x) = diag(1, -1, -1, 1) psi(x), with the metric even and the shift odd.
 - **Compilation:** both examples (DiracStar_2D and ScalarField_2D) compile against Chombo (2D, MPI, gcc).
 - **Scalar-field regression:** the scalar RHS and constraints on a test box are bit-identical before and after the
   refactor.
+
+## Boosted stars and head-on binaries
+
+These follow the boson stars of `BosonStar.impl.hpp`.
+
+- **Single star:** `DS_rapidity` boosts the star along the symmetry axis; rapidity > 0 moves it towards -x.
+- **Binary:** `DS_binary = 1` gives a head-on binary along the axis, with `DS_separation`, `DS_rapidity2`,
+  `central_amplitude_dirac2`, `phase2` and `mass_ratio`.
+- **Metric:** `id_choice` 0, 1 or 2 selects plain superposition, the equal-mass fix or the unequal-mass fix.
+- **Spinor:** psi_lab = U(eta) e^{-i omega t~} psi_0(x~), with
+
+      U = cosh(eta/2) - sinh(eta/2) alpha_x,   tanh(eta) = tanh(xi) alpha / psi^2,   alpha_x block off-diagonal sigma_3
+
+  U is the local Lorentz boost between the star's rest tetrad and the lab tetrad. A boost along the axis preserves
+  axisymmetry and the mirror relation between the two spinors.
+- **Derivation:** checked numerically in ExoZvezda's `Examples/SingleDiracStar/derivations/check_dirac_boost.py`
+  (dirac-stars branch).
+- **Interference:** both stars occupy the same spinor fields, so where they overlap the fields interfere (as for
+  boson stars) and the relative phase matters.
 
 ## The family (mu = G = 1)
 

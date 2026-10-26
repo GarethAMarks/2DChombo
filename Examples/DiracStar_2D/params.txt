@@ -49,6 +49,20 @@ dirac_frequency_guess = 1.8      # brackets up or down from here automatically
 dirac_alpha_central_guess = 0.95
 # write_1d_profiles = 1          # writes DiracStar_1d_profiles.dat (isotropic and areal profiles)
 
+# Boost along the axis and head-on binaries (conventions of the boson-star binaries: star 1 at x = q d/(1+q) with
+# rapidity DS_rapidity (> 0 moves towards -x), star 2 at -d/(1+q) with -DS_rapidity2)
+DS_rapidity = 0.0
+DS_binary = 0
+DS_separation = 16.
+DS_rapidity2 = 0.0               # defaults to DS_rapidity
+# central_amplitude_dirac2 = 0.15  # defaults to central_amplitude_dirac
+phase2 = 0.0                     # phase of star 2 (units of pi); the relative phase matters where the stars overlap
+mass_ratio = 1
+id_choice = 2                    # 0: plain superposition, 1: equal-mass fix, 2: unequal-mass fix (weight functions)
+radius_width1 = 10.
+radius_width2 = 20.
+conformal_factor_power = 4
+
 # Perturbation (f, g) -> (1 + a exp(-(r - r0)^2 / w^2)) (f, g) with the metric re-solved, as in Spherical_BS_Evolver.
 # On the unstable branch (e.g. A = 0.30) a = +0.01 collapses to a black hole and a = -0.01 migrates to the stable
 # branch (seen in the 1D code with w = 3, r0 = 0)

@@ -50,6 +50,20 @@ class SimulationParameters : public SimulationParametersBase
         pp.load("star_centre", diracstar_params.star_centre, {0.5 * L, 0.});
         pp.load("phase", diracstar_params.phase, 0.0);
         pp.load("write_1d_profiles", diracstar_params.write_1d_profiles, false);
+        pp.load("DS_rapidity", diracstar_params.rapidity, 0.0); // boost along the axis (> 0 moves towards -x)
+
+        // head-on binary along the axis (conventions of the boson-star binaries in BosonStar.impl.hpp)
+        pp.load("DS_binary", diracstar_params.binary, false);
+        diracstar_params.solver2 = s;
+        pp.load("central_amplitude_dirac2", diracstar_params.solver2.A_central, s.A_central);
+        pp.load("DS_rapidity2", diracstar_params.rapidity2, diracstar_params.rapidity);
+        pp.load("phase2", diracstar_params.phase2, 0.0);
+        pp.load("DS_separation", diracstar_params.separation, 0.0);
+        pp.load("mass_ratio", diracstar_params.mass_ratio, 1.0);
+        pp.load("id_choice", diracstar_params.id_choice, 2);
+        pp.load("radius_width1", diracstar_params.radius_width1, 10.);
+        pp.load("radius_width2", diracstar_params.radius_width2, 20.);
+        pp.load("conformal_factor_power", diracstar_params.conformal_factor_power, 4);
 
         // tagging (as for ScalarField_2D: curvature of the matter field and of chi)
         pp.load("regrid_threshold_psi", regrid_threshold_psi, 1.e-4);
@@ -69,6 +83,11 @@ class SimulationParameters : public SimulationParametersBase
                         "the star must be centred on the symmetry axis (y = 0)");
         check_parameter("dirac_gridpoints", diracstar_params.solver.n_gridpoints,
                         diracstar_params.solver.n_gridpoints > 100, "must be > 100");
+        check_parameter("id_choice", diracstar_params.id_choice,
+                        diracstar_params.id_choice >= 0 && diracstar_params.id_choice <= 2, "must be 0, 1 or 2");
+        warn_parameter("mass_ratio", diracstar_params.mass_ratio,
+                       !diracstar_params.binary || diracstar_params.id_choice != 1 || diracstar_params.mass_ratio == 1.,
+                       "the equal-mass fix (id_choice 1) assumes equal stars");
     }
 
     bool activate_extraction;
