@@ -40,10 +40,12 @@ enum
     c_B1,
     c_B2,
 
+#ifndef CARTOON_NO_SCALAR_FIELD // examples without the complex scalar field define this
     c_phi,
     c_phi_Im,
     c_Pi,
     c_Pi_Im,
+#endif
     NUM_CCZ4_VARS
 };
 
@@ -70,11 +72,14 @@ static const std::array<std::string, NUM_CCZ4_VARS> ccz4_variable_names = {
 
     "shift1", "shift2",
 
-    "B1",     "B2",
-    
+    "B1",     "B2"
+#ifndef CARTOON_NO_SCALAR_FIELD
+    ,
     "phi",  "phi_Im",
 
-    "Pi",   "Pi_Im"};
+    "Pi",   "Pi_Im"
+#endif
+    };
 } // namespace UserVariables
 
 #endif /* CCZ4VARIABLES_HPP */

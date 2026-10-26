@@ -44,10 +44,12 @@ template <class data_t> struct VarsNoGauge
         // Scalars
         define_enum_mapping(mapping_function, c_chi, chi);
         define_enum_mapping(mapping_function, c_K, K);
+#ifndef CARTOON_NO_SCALAR_FIELD // defined by examples without the complex scalar field
         define_enum_mapping(mapping_function, c_phi, phi);
         define_enum_mapping(mapping_function, c_Pi, Pi);
         define_enum_mapping(mapping_function, c_phi_Im, phi_Im);
         define_enum_mapping(mapping_function, c_Pi_Im, Pi_Im);
+#endif
 
         // Symmetric 2-tensors
 #if CH_SPACEDIM == 3
@@ -109,8 +111,10 @@ template <class data_t> struct Diff2VarsNoGauge
     {
         using namespace VarsTools; // define_enum_mapping is part of VarsTools
         define_enum_mapping(mapping_function, c_chi, chi);
+#ifndef CARTOON_NO_SCALAR_FIELD
         define_enum_mapping(mapping_function, c_phi, phi);
         define_enum_mapping(mapping_function, c_phi_Im, phi_Im);
+#endif
 #if CH_SPACEDIM == 3
         define_symmetric_enum_mapping(mapping_function,
                                       GRInterval<c_h11, c_h33>(), h);

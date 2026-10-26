@@ -1,0 +1,165 @@
+#See the wiki page for an explanation of the params!
+# https://github.com/GRChombo/GRChombo/wiki/Guide-to-parameters
+#
+# A single Dirac star (two spinors, see Source/Matter/DiracFieldCartoon.hpp) in axisymmetry. The defaults are a
+# stable-branch star (A = 0.15, M = 0.683); see README_Dirac.md for the family, the unstable branch and perturbations.
+# NB: the grid and tagging values below are untested starting points to be tuned on the cluster.
+
+#################################################
+# Filesystem parameters
+
+verbosity = 0
+
+# location / naming of output files
+# output_path = "" # Main path for all files. Must exist!
+chk_prefix = DiracChk_
+plot_prefix = Diracp_
+#restart_file = DiracChk_
+
+# HDF5files are written every dt = L/N*dt_multiplier*checkpoint_interval
+checkpoint_interval = 300
+# set to 0 to turn off plot files (except at t=0 and t=stop_time)
+# set to -1 to never ever print plotfiles
+plot_interval = 50
+num_plot_vars = 9
+plot_vars = psi0_Re psi0_Im psi2_Im psi3_Im mod_psi chi lapse Ham rho
+
+# subpaths - specific directories for hdf5, pout, extraction data
+# (these are created at runtime)
+hdf5_subpath = "hdf5"
+pout_subpath = "pout"
+data_subpath = "data"
+
+print_progress_only_to_rank_0 = 1
+
+#################################################
+# Dirac star initial data (same meanings as Spherical_BS_Evolver's BSParams.par)
+
+G_Newton = 1.0
+dirac_mass = 1.0                 # fermion mass mu
+central_amplitude_dirac = 0.15   # A_central = g(0); stable branch for A < 0.2288 (max mass M = 0.70891)
+dirac_eigen = 0                  # number of nodes of G (0 = ground state)
+star_centre = 128 0              # must lie on the axis (y = 0)
+phase = 0.0                      # overall phase of the spinor (units of pi)
+
+# 1D solver (defaults shown; dr = R / (gridpoints - 1))
+dirac_solver_radius = 100.       # use >~ 3 r_99 (r_99 = 17 at A = 0.05, 9 at 0.15, 6 at 0.3)
+dirac_gridpoints = 20001
+dirac_frequency_guess = 1.8      # brackets up or down from here automatically
+dirac_alpha_central_guess = 0.95
+# write_1d_profiles = 1          # writes DiracStar_1d_profiles.dat (isotropic and areal profiles)
+
+# Perturbation (f, g) -> (1 + a exp(-(r - r0)^2 / w^2)) (f, g) with the metric re-solved, as in Spherical_BS_Evolver.
+# On the unstable branch (e.g. A = 0.30) a = +0.01 collapses to a black hole and a = -0.01 migrates to the stable
+# branch (seen in the 1D code with w = 3, r0 = 0)
+dirac_perturb = 0
+dirac_perturb_amp = 0.01
+dirac_perturb_spread = 3.
+dirac_perturb_center = 0.
+
+#################################################
+# Grid parameters
+
+# 'N' is the number of subdivisions in each direction of a cubic box
+# 'L' is the length of the longest side of the box, dx_coarsest = L/N
+N = 128
+L = 256
+
+max_level = 6 # There are (max_level+1) grids, so min is zero
+
+# Frequency of regridding at each level and thresholds on the tagging
+# Need one for each level except the top one, ie max_level items
+regrid_interval = 0 64 32 16 8 4 2 0
+regrid_threshold = 10
+
+# DiracAndChiExtractionTaggingCriterion: curvature of the spinor components and of chi (as for ScalarField_2D,
+# whose effective thresholds are 1e-4 for phi and 1 for chi)
+regrid_threshold_psi = 1.e-4
+regrid_threshold_chi = 1.
+
+max_box_size = 32
+min_box_size = 16
+grid_buffer_size = 16
+center = 128 0  # defaults to center of the grid
+
+#################################################
+
+# Boundary Conditions parameters
+# Periodic directions - 0 = false, 1 = true
+isPeriodic = 0 0
+# if not periodic, then specify the boundary type
+# 0 = static, 1 = sommerfeld, 2 = reflective
+# (see BoundaryConditions.hpp for details)
+hi_boundary = 1 1
+lo_boundary = 1 2
+
+# if reflective boundaries selected, must set
+# parity of all vars (in order given by UserVariables.hpp)
+# The spinor parities follow from axisymmetry (y: psi1, psi3 odd) and, for a reflective boundary at x = 0
+# (equatorial symmetry), from the reflection psi(x) -> diag(1, -1, -1, 1) psi(-x) (psi1, psi2 odd in x)
+vars_parity            = 0 0 4 0 0   # chi, hij and hww
+                         0 0 4 0 0   # K and Aij
+                         0 1 2       # Theta, Gamma
+                         0 1 2 1 2   # lapse shift and B
+                         0 0 4 4     # psi0 Re/Im, psi1 Re/Im
+                         1 1 2 2     # psi2 Re/Im, psi3 Re/Im
+vars_parity_diagnostic = 0 1 2 0     # Ham and Mom
+                         0 7         # Weyl
+                         0 0         # ADM M and P
+                         0 0 1 2     # rho, rho_ADM, Sx, Sy
+                         2 0         # N (integrand, ~ y), mod_psi
+
+# if sommerfeld boundaries selected, must select
+# asymptotic values
+num_nonzero_asymptotic_vars = 5
+nonzero_asymptotic_vars = chi h11 h22 hww lapse
+nonzero_asymptotic_values = 1.0 1.0 1.0 1.0 1.0
+
+#################################################
+
+# Evolution parameters
+# dt will be dx*dt_multiplier on each grid level
+dt_multiplier = 0.25
+stop_time = 300.0
+#max_steps = 30
+nan_check = 1
+
+# Lapse evolution
+lapse_advec_coeff = 1.0
+lapse_coeff = 2.0
+lapse_power = 1.0
+
+# Shift evolution
+shift_advec_coeff = 0.0 # Usually no advection for beta
+shift_Gamma_coeff = 0.75
+eta = 1.0 # eta of gamma driver, should be of order ~1/M_ADM of spacetime
+
+# CCZ4 parameters
+formulation = 0 # 1 for BSSN, 0 for CCZ4
+kappa1 = 0.1
+kappa2 = 0.
+kappa3 = 1.
+covariantZ4 = 1 # 0: keep kappa1; 1 [default]: replace kappa1 -> kappa1/lapse
+
+# coefficient for KO numerical dissipation (applied to the spinor too; the first-order Dirac system needs it)
+sigma = 0.3
+calculate_constraint_norms = true
+
+#################################################
+# GW extraction params
+extraction_center = 128 0
+activate_extraction = 0
+num_extraction_radii = 4
+extraction_radii = 40.0 60.0 80.0 100.0
+extraction_levels = 2 2 1 1
+num_points_phi = 72
+num_points_theta = 108
+num_modes = 3
+# l m for spherical harmonics
+modes = 2 0
+        3 0
+        4 0
+
+write_extraction = 1
+extraction_subpath = "data/extraction" # directory for 'write_extraction = 1'
+extraction_file_prefix = "Weyl4_extraction_"

@@ -6,6 +6,7 @@
 #ifndef CCZ4CARTOON_HPP_
 #define CCZ4CARTOON_HPP_
 
+#include "CCZ4CartoonBase.hpp"
 #include "CCZ4CartoonGeometry.hpp"
 #include "CCZ4CartoonVars.hpp"
 #include "CCZ4Geometry.hpp"
@@ -31,7 +32,7 @@
 template <class gauge_t = MovingPunctureGauge,
           class deriv_t = FourthOrderDerivatives,
           class potential_t = Potential>
-class CCZ4Cartoon : public CCZ4RHS<gauge_t>
+class CCZ4Cartoon : public CCZ4CartoonBase<gauge_t, deriv_t>
 {
   public:
     using CCZ4 = CCZ4RHS<gauge_t, deriv_t>;
@@ -87,7 +88,6 @@ class CCZ4Cartoon : public CCZ4RHS<gauge_t>
             &advec, //!< The advection derivatives of the variables
         const double &cartoon_coord) const; //!< cartoon radial coordinate
     
-    const double m_G_Newton;
     const potential_t m_potential;
 };
 
