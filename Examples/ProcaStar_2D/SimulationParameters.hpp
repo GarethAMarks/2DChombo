@@ -51,10 +51,29 @@ class SimulationParameters : public SimulationParametersBase
         pp.load("proca_alpha_central_guess", s.alpha_central, 0.9);
         pp.load("proca_r_match_fac", s.r_match_fac, 0.85);
         pp.load("proca_freq_epsilon", s.freq_epsilon, 1e-19);
-        pp.load("proca_perturb", s.perturb, false);
-        pp.load("proca_perturb_amp", s.perturb_amp, 0.);
+        // Perturbations. With proca_perturb = 1 the azimuthal index proca_perturb_m selects the perturbation:
+        //   m = 0: the spherical perturbation (f, g) -> (1 + a exp(-(r - r0)^2 / w^2)) (f, g) of the 1D solver, with the
+        //          constraints re-solved (a = proca_perturb_amp, w = proca_perturb_spread, r0 = proca_perturb_center);
+        //   m >= 1: the aspherical perturbation of arXiv:2609.30021, Eq. (11): all matter fields multiplied by
+        //          exp(-2 delta cos(m phi)), delta = proca_perturb_amp, phi the polar angle from the symmetry axis about
+        //          the star centre (so the perturbation is axisymmetric; the two-axis perturbations need the 3D code).
+        // proca_perturb_aspherical = 0 (default) disables the aspherical perturbations: the perturbation is then the
+        // spherical one whatever m is.
+        bool perturb, perturb_aspherical;
+        int perturb_m;
+        double perturb_amp;
+        pp.load("proca_perturb", perturb, false);
+        pp.load("proca_perturb_aspherical", perturb_aspherical, false);
+        pp.load("proca_perturb_m", perturb_m, 0);
+        pp.load("proca_perturb_amp", perturb_amp, 0.);
         pp.load("proca_perturb_spread", s.perturb_spread, 3.);
         pp.load("proca_perturb_center", s.perturb_center, 0.);
+        AsphericalPerturbation &asph = procastar_params.aspherical;
+        asph.active = perturb && perturb_aspherical;
+        asph.m = perturb_m;
+        asph.delta = perturb_amp;
+        s.perturb = perturb && (!perturb_aspherical || perturb_m == 0);
+        s.perturb_amp = perturb_amp;
         pp.load("star_centre", procastar_params.star_centre, {0.5 * L, 0.});
         pp.load("phase", procastar_params.phase, 0.0);
         pp.load("write_1d_profiles", procastar_params.write_1d_profiles, false);
@@ -109,6 +128,16 @@ class SimulationParameters : public SimulationParametersBase
                         procastar_params.solver.lambda == 0. && !procastar_params.solver.solitonic,
                         "the evolution (ProcaFieldCartoon) is for the free Proca field: set proca_lambda = 0 and "
                         "proca_solitonic = 0");
+        const AsphericalPerturbation &asph = procastar_params.aspherical;
+        const std::string asph_error = asph.check(CH_SPACEDIM);
+        check_parameter("proca_perturb_m", asph.m, asph_error.empty(), asph_error);
+        check_parameter("PS_binary", procastar_params.binary, !(procastar_params.binary && asph.active),
+                        "aspherical perturbations (proca_perturb_aspherical) are only implemented for single stars");
+        // the perturbation must have the symmetry of an equatorial reflective boundary (x = 0) if there is one
+        const bool x_reflective = boundary_params.lo_boundary[0] == BoundaryConditions::REFLECTIVE_BC ||
+                                  boundary_params.hi_boundary[0] == BoundaryConditions::REFLECTIVE_BC;
+        check_parameter("proca_perturb_m", asph.m, !x_reflective || asph.even_under_reflection(0),
+                        "an odd-m aspherical perturbation breaks the equatorial (x) reflection symmetry");
         check_parameter("id_choice", procastar_params.id_choice,
                         procastar_params.id_choice >= 0 && procastar_params.id_choice <= 2, "must be 0, 1 or 2");
         warn_parameter("mass_ratio", procastar_params.mass_ratio,

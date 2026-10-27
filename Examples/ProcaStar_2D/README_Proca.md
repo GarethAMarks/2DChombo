@@ -143,6 +143,13 @@ These follow the boson stars of `BosonStar.impl.hpp`.
   The default 30001 points leave a floor of about 2e-10 in Mom from the interpolated psi' and alpha'.
 - **Head-on binary (mode 2):** for all three `id_choice` options the data are exactly mirror-symmetric, with X_x and
   E^x odd, the metric even and the shift odd.
+- **Aspherical perturbation (mode 3, m = 3, delta = 0.05):**
+  - the Proca variables equal exp(-2 delta cos(m phi)) times the unperturbed ones to round-off, and the metric is
+    unchanged;
+  - Mom stays zero (1e-17);
+  - Ham / 16 pi rho = 0.18 at both resolutions, the expected O(delta) violation;
+  - away from the centre (r > 0.5) Gauss / |mu^2 X_phi| converges, 8.4e-4 -> 7.1e-5 for dx = 0.1 -> 0.05;
+  - next to the centre, where the factor is discontinuous, it stays at 3.9e-2.
 - **Full example, initial data only** (`max_level = 0`, `max_steps = 0`):
 
   | dx | L2 Ham | L2 Gauss | ParticleNumber |
@@ -186,6 +193,32 @@ All of these are plottable (`plot_vars`).
 
 There is a single (complex) field, so n is also the density of that field.
 
+## Perturbations
+
+`proca_perturb = 1` perturbs a single star. In this generalised formalism the azimuthal index
+`proca_perturb_m` selects the perturbation, and the spherical perturbation of Spherical_BS_Evolver is its m = 0 member.
+
+- **m = 0 (spherical):** the 1D solver applies (f, g) -> (1 + a exp(-(r - r0)^2 / w^2)) (f, g) and re-solves the
+  constraints (metric and Gauss law), as before. Here a = `proca_perturb_amp`, w = `proca_perturb_spread` and
+  r0 = `proca_perturb_center`.
+- **m >= 1 (aspherical):** the perturbation of arXiv:2609.30021, Eq. (11). The matter fields (X_phi, X_i and E^i) are multiplied
+  by exp(-2 delta cos(m phi)), with delta = `proca_perturb_amp`.
+  - phi is the azimuthal angle about the star centre with respect to the symmetry axis and the cylindrical radius,
+    i.e. the polar angle from the axis.
+  - In the cartoon code the perturbation is therefore axisymmetric. The two-axis perturbations of the paper are only
+    in ExoZvezda.
+  - As in the paper, the constraints are not re-solved, so Ham is violated at O(delta).
+  - Gauss still holds for a star at rest: E^i is radial and the factor depends only on angles. The exception is the
+    cells next to the centre, where phi is undefined and the factor jumps; the violation there is O(delta) and is
+    damped by Z.
+- **Switching off:** `proca_perturb_aspherical` (default 0) must be 1 for m >= 1. With 0 the aspherical perturbations
+  are disabled and the perturbation is spherical whatever m is.
+- **Restrictions:**
+  - aspherical perturbations are for single stars only (not with the `binary` option);
+  - odd m is rejected with a reflective x boundary (equatorial symmetry), since cos(m phi) is then odd.
+
+The code is in `Source/utils/AsphericalPerturbation.hpp`, shared with ExoZvezda.
+
 ## Running
 
     cd Examples/ProcaStar_2D && make all && mpirun ./Main_ProcaStar2D*.ex params.txt
@@ -193,7 +226,7 @@ There is a single (complex) field, so n is also the density of that field.
 **Initial-data parameters** (`central_amplitude_proca`, `proca_*`) mirror Spherical_BS_Evolver's `BSParams.par` with
 `proca = 1`:
 
-- `proca_perturb*` gives the Gaussian perturbation of f and g, with the metric and E re-solved.
+- `proca_perturb*` give the spherical and aspherical perturbations described below.
 - `proca_solver_radius` should be at least about 4 r_99.
 - The frequency search brackets automatically.
 - Beyond 0.8 `proca_solver_radius` the field is continued as exp(-sqrt(mu^2 - omega^2) r)/r. For a perturbed star this

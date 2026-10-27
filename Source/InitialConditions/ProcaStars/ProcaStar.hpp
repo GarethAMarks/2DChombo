@@ -7,6 +7,7 @@
 #define PROCASTAR_HPP_
 
 #include "CCZ4CartoonProca.hpp"
+#include "AsphericalPerturbation.hpp"
 #include "Cell.hpp"
 #include "Coordinates.hpp"
 #include "ProcaStarBoost.hpp"
@@ -41,6 +42,10 @@ struct ProcaStar_params_t
     int id_choice = 2;                           //!< 0: plain superposition, 1: equal-mass fix, 2: unequal-mass fix
     double radius_width1 = 10., radius_width2 = 20.; //!< weight-function widths (id_choice 2)
     int conformal_factor_power = 4;              //!< used by id_choice 2
+
+    //! aspherical (axisymmetric) perturbation of a single star, arXiv:2609.30021 Eq. (11), with phi the polar angle from
+    //! the symmetry axis (AsphericalPerturbation.hpp); the spherical one is in solver (perturb, perturb_amp, ...)
+    AsphericalPerturbation aspherical;
 };
 
 /// Initial data for a Proca star, or a head-on binary, in the 2D cartoon code
@@ -55,6 +60,9 @@ struct ProcaStar_params_t
  * along the axis preserves axisymmetry (no azimuthal components). Binaries superpose X_phi, X_i and E^i and combine the
  * metrics as the boson-star binaries do (id_choice 0 plain, 1 equal-mass fix, 2 unequal-mass fix). Gamma^i must be
  * computed afterwards (GammaCartoonCalculator). Use with disable_simd() as for BosonStar.
+ * Perturbations: the spherical one (m = 0) is applied by the 1D solver, with the constraints re-solved; the aspherical
+ * one (aspherical.active, m >= 1; single stars only) multiplies the matter fields by exp(-2 delta cos(m phi)), phi the
+ * polar angle from the symmetry axis about the star centre (arXiv:2609.30021, Eq. (11); AsphericalPerturbation.hpp).
  **/
 class ProcaStar
 {
@@ -100,7 +108,7 @@ class ProcaStar
         if (!m_params.binary)
         {
             const BoostedProcaStarVars b = boosted_proca_star(m_1d_sol, x, y, 0., m_params.rapidity, m_params.phase);
-            add_field(vars, b);
+            add_field(vars, b, m_params.aspherical.factor(x, y, 0.)); // factor 1 unless perturbed aspherically
             set_metric(vars, b.gLL, b.KLL, b.lapse, b.shiftx, -1.);
         }
         else
@@ -176,17 +184,18 @@ class ProcaStar
     ProcaStarSolution m_1d_sol2;
 
     //! adds the in-plane Proca variables of a (boosted) star at a point of the plane z = 0 (its X_z, E^z vanish there)
-    template <class vars_t> static void add_field(vars_t &vars, const BoostedProcaStarVars &b)
+    //! (multiplied by F, the aspherical perturbation factor)
+    template <class vars_t> static void add_field(vars_t &vars, const BoostedProcaStarVars &b, double F = 1.)
     {
         for (int i = 0; i < 2; ++i)
         {
-            vars.X_Re[i] += b.X[i].real();
-            vars.X_Im[i] += b.X[i].imag();
-            vars.E_Re[i] += b.E[i].real();
-            vars.E_Im[i] += b.E[i].imag();
+            vars.X_Re[i] += F * b.X[i].real();
+            vars.X_Im[i] += F * b.X[i].imag();
+            vars.E_Re[i] += F * b.E[i].real();
+            vars.E_Im[i] += F * b.E[i].imag();
         }
-        vars.Xphi_Re += b.Xphi.real();
-        vars.Xphi_Im += b.Xphi.imag();
+        vars.Xphi_Re += F * b.Xphi.real();
+        vars.Xphi_Im += F * b.Xphi.imag();
     }
 
   protected:
