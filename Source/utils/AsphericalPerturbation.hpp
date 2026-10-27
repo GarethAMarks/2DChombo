@@ -22,16 +22,19 @@
  so phi is the polar angle from the symmetry axis and the perturbation is axisymmetric.
 
  The variables multiplied by F are, for the Dirac stars, all spinor components and, for the Proca stars, X_phi, X_i
- and E^i (for the scalar field of the paper, phi and Pi). F depends only on the angles about the star centre, so for a
- Proca star at rest, whose E^i is radial, x^i d_i F = 0 keeps the Gauss constraint D_i E^i + mu^2 X_phi = 0 satisfied.
- The Hamiltonian constraint is violated at O(delta), as in the paper, where the constraints are not re-solved after the
- aspherical perturbation.
+ and E^i (for the scalar field of the paper, phi and Pi). The constraints are not re-solved, as in the paper, so the
+ Hamiltonian constraint is violated at O(delta). F depends only on the angles about the star centre, so for a Proca star
+ at rest, whose E^i is radial, x^i d_i F = 0 and the Gauss constraint D_i E^i + mu^2 X_phi = 0 still holds wherever F
+ is smooth.
 
  Index 0 is reserved for the spherical perturbation of the 1D solvers (Gaussian, with the constraints re-solved), so in
  this generalised formalism m = 0 means "spherical" and a factor with index 0 here is the identity.
 
- NB: phi is undefined on the line through the centre normal to the (x_a, x_b) plane, so in 3D F is discontinuous across
- that line, by up to exp(4 delta). This is inherent in the prescription of the paper; small delta keeps it mild.
+ NB: phi is undefined on the line through the centre normal to the (x_a, x_b) plane (in the axisymmetric 2D case, only
+ at the centre), and F jumps there by up to exp(4 delta). Any field that does not vanish there (the scalar field of the
+ paper, the Dirac g, the Proca X_phi) therefore becomes discontinuous at that line or point. This is inherent in the
+ prescription of Eq. (11). The resulting constraint violations (including Gauss for the Proca field) are O(delta),
+ confined to the cells next to that set, and do not converge away with resolution; small delta keeps them mild.
 
  Chombo-free and shared by the Dirac and Proca stars of 2DChombo and ExoZvezda.
 */
