@@ -63,10 +63,19 @@ radius_width1 = 10.
 radius_width2 = 20.
 conformal_factor_power = 4
 
-# Perturbation (f, g) -> (1 + a exp(-(r - r0)^2 / w^2)) (f, g) with the metric re-solved, as in Spherical_BS_Evolver.
-# On the unstable branch (e.g. A = 0.30) a = +0.01 collapses to a black hole and a = -0.01 migrates to the stable
-# branch (seen in the 1D code with w = 3, r0 = 0)
+# Perturbations. With dirac_perturb = 1 the azimuthal index dirac_perturb_m selects the perturbation:
+#   m = 0: the spherical perturbation (f, g) -> (1 + a exp(-(r - r0)^2 / w^2)) (f, g), with the metric re-solved, as in
+#          Spherical_BS_Evolver (a = dirac_perturb_amp, w = dirac_perturb_spread, r0 = dirac_perturb_center);
+#   m >= 1 (needs dirac_perturb_aspherical = 1): the aspherical perturbation of arXiv:2609.30021, Eq. (11): all matter
+#          fields multiplied by exp(-2 delta cos(m phi)), delta = dirac_perturb_amp, phi the polar angle from the
+#          symmetry axis about the star centre. In 2D it is axisymmetric; the constraints are not re-solved. Odd m is
+#          incompatible with a reflective x boundary. Single stars only.
+# dirac_perturb_aspherical = 0 disables the aspherical perturbations (the perturbation is then always spherical).
+# On the unstable branch (e.g. A = 0.30) m = 0 with a = +0.01 collapses to a black hole and a = -0.01 migrates to the
+# stable branch (seen in the 1D code with w = 3, r0 = 0).
 dirac_perturb = 0
+dirac_perturb_aspherical = 0
+dirac_perturb_m = 0
 dirac_perturb_amp = 0.01
 dirac_perturb_spread = 3.
 dirac_perturb_center = 0.

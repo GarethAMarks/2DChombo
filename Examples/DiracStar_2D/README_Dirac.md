@@ -100,6 +100,11 @@ slice data.
   The default 20001 points leave a floor of about 1e-8 from the interpolated psi' and alpha'.
 - **Head-on binary (mode 2):** for all three `id_choice` options the data are exactly mirror-symmetric,
   psi(-x) = diag(1, -1, -1, 1) psi(x), with the metric even and the shift odd.
+- **Aspherical perturbation (mode 3, m = 3, delta = 0.05):**
+  - the spinor equals exp(-2 delta cos(m phi)) times the unperturbed one to round-off, and the metric is unchanged;
+  - Mom stays zero (1e-16);
+  - Ham / 16 pi rho = 0.18 at both resolutions, the expected O(delta) violation since the constraints are not
+    re-solved.
 - **Compilation:** both examples (DiracStar_2D and ScalarField_2D) compile against Chombo (2D, MPI, gcc).
 - **Scalar-field regression:** the scalar RHS and constraints on a test box are bit-identical before and after the
   refactor.
@@ -150,14 +155,36 @@ observers, n = -n_mu J^mu = psi^dag psi summed over the spinors.
 | `mod_psi` | sqrt(2 pi n), which equals A_central at the centre of a star at rest |
 | `rho` | energy density |
 
+## Perturbations
+
+`dirac_perturb = 1` perturbs a single star. In this generalised formalism the azimuthal index
+`dirac_perturb_m` selects the perturbation, and the spherical perturbation of Spherical_BS_Evolver is its m = 0 member.
+
+- **m = 0 (spherical):** the 1D solver applies (f, g) -> (1 + a exp(-(r - r0)^2 / w^2)) (f, g) and re-solves the
+  constraints (metric), as before. Here a = `dirac_perturb_amp`, w = `dirac_perturb_spread` and
+  r0 = `dirac_perturb_center`.
+- **m >= 1 (aspherical):** the perturbation of arXiv:2609.30021, Eq. (11). The matter fields (the spinor components) are multiplied
+  by exp(-2 delta cos(m phi)), with delta = `dirac_perturb_amp`.
+  - phi is the azimuthal angle about the star centre with respect to the symmetry axis and the cylindrical radius,
+    i.e. the polar angle from the axis.
+  - In the cartoon code the perturbation is therefore axisymmetric. The two-axis perturbations of the paper are only
+    in ExoZvezda.
+  - As in the paper, the constraints are not re-solved, so Ham is violated at O(delta).
+- **Switching off:** `dirac_perturb_aspherical` (default 0) must be 1 for m >= 1. With 0 the aspherical perturbations
+  are disabled and the perturbation is spherical whatever m is.
+- **Restrictions:**
+  - aspherical perturbations are for single stars only (not with the `binary` option);
+  - odd m is rejected with a reflective x boundary (equatorial symmetry), since cos(m phi) is then odd.
+
+The code is in `Source/utils/AsphericalPerturbation.hpp`, shared with ExoZvezda.
+
 ## Running
 
     cd Examples/DiracStar_2D && make all && mpirun ./Main_DiracStar2D*.ex params.txt
 
 **Initial-data parameters** (`central_amplitude_dirac`, `dirac_*`) mirror Spherical_BS_Evolver's `BSParams.par`:
 
-- `dirac_perturb`, `dirac_perturb_amp`, `dirac_perturb_spread` and `dirac_perturb_center` give the same Gaussian
-  perturbation, with the metric re-solved.
+- `dirac_perturb*` give the spherical and aspherical perturbations described below.
 - `dirac_solver_radius` should be at least about 3 r_99.
 - The frequency search brackets automatically.
 

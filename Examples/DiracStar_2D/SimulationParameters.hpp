@@ -47,10 +47,29 @@ class SimulationParameters : public SimulationParametersBase
         pp.load("dirac_alpha_central_guess", s.alpha_central, 0.95);
         pp.load("dirac_r_match_fac", s.r_match_fac, 0.85);
         pp.load("dirac_freq_epsilon", s.freq_epsilon, 1e-19);
-        pp.load("dirac_perturb", s.perturb, false);
-        pp.load("dirac_perturb_amp", s.perturb_amp, 0.);
+        // Perturbations. With dirac_perturb = 1 the azimuthal index dirac_perturb_m selects the perturbation:
+        //   m = 0: the spherical perturbation (f, g) -> (1 + a exp(-(r - r0)^2 / w^2)) (f, g) of the 1D solver, with the
+        //          constraints re-solved (a = dirac_perturb_amp, w = dirac_perturb_spread, r0 = dirac_perturb_center);
+        //   m >= 1: the aspherical perturbation of arXiv:2609.30021, Eq. (11): all matter fields multiplied by
+        //          exp(-2 delta cos(m phi)), delta = dirac_perturb_amp, phi the polar angle from the symmetry axis about
+        //          the star centre (so the perturbation is axisymmetric; the two-axis perturbations need the 3D code).
+        // dirac_perturb_aspherical = 0 (default) disables the aspherical perturbations: the perturbation is then the
+        // spherical one whatever m is.
+        bool perturb, perturb_aspherical;
+        int perturb_m;
+        double perturb_amp;
+        pp.load("dirac_perturb", perturb, false);
+        pp.load("dirac_perturb_aspherical", perturb_aspherical, false);
+        pp.load("dirac_perturb_m", perturb_m, 0);
+        pp.load("dirac_perturb_amp", perturb_amp, 0.);
         pp.load("dirac_perturb_spread", s.perturb_spread, 3.);
         pp.load("dirac_perturb_center", s.perturb_center, 0.);
+        AsphericalPerturbation &asph = diracstar_params.aspherical;
+        asph.active = perturb && perturb_aspherical;
+        asph.m = perturb_m;
+        asph.delta = perturb_amp;
+        s.perturb = perturb && (!perturb_aspherical || perturb_m == 0);
+        s.perturb_amp = perturb_amp;
         pp.load("star_centre", diracstar_params.star_centre, {0.5 * L, 0.});
         pp.load("phase", diracstar_params.phase, 0.0);
         pp.load("write_1d_profiles", diracstar_params.write_1d_profiles, false);
@@ -100,6 +119,16 @@ class SimulationParameters : public SimulationParametersBase
                         "the star must be centred on the symmetry axis (y = 0)");
         check_parameter("dirac_gridpoints", diracstar_params.solver.n_gridpoints,
                         diracstar_params.solver.n_gridpoints > 100, "must be > 100");
+        const AsphericalPerturbation &asph = diracstar_params.aspherical;
+        const std::string asph_error = asph.check(CH_SPACEDIM);
+        check_parameter("dirac_perturb_m", asph.m, asph_error.empty(), asph_error);
+        check_parameter("DS_binary", diracstar_params.binary, !(diracstar_params.binary && asph.active),
+                        "aspherical perturbations (dirac_perturb_aspherical) are only implemented for single stars");
+        // the perturbation must have the symmetry of an equatorial reflective boundary (x = 0) if there is one
+        const bool x_reflective = boundary_params.lo_boundary[0] == BoundaryConditions::REFLECTIVE_BC ||
+                                  boundary_params.hi_boundary[0] == BoundaryConditions::REFLECTIVE_BC;
+        check_parameter("dirac_perturb_m", asph.m, !x_reflective || asph.even_under_reflection(0),
+                        "an odd-m aspherical perturbation breaks the equatorial (x) reflection symmetry");
         check_parameter("id_choice", diracstar_params.id_choice,
                         diracstar_params.id_choice >= 0 && diracstar_params.id_choice <= 2, "must be 0, 1 or 2");
         warn_parameter("mass_ratio", diracstar_params.mass_ratio,

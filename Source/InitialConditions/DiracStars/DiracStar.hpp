@@ -7,6 +7,7 @@
 #define DIRACSTAR_HPP_
 
 #include "CCZ4CartoonDirac.hpp"
+#include "AsphericalPerturbation.hpp"
 #include "Cell.hpp"
 #include "Coordinates.hpp"
 #include "DiracStarBoost.hpp"
@@ -41,6 +42,10 @@ struct DiracStar_params_t
     int id_choice = 2;                           //!< 0: plain superposition, 1: equal-mass fix, 2: unequal-mass fix
     double radius_width1 = 10., radius_width2 = 20.; //!< weight-function widths (id_choice 2)
     int conformal_factor_power = 4;              //!< used by id_choice 2
+
+    //! aspherical (axisymmetric) perturbation of a single star, arXiv:2609.30021 Eq. (11), with phi the polar angle from
+    //! the symmetry axis (AsphericalPerturbation.hpp); the spherical one is in solver (perturb, perturb_amp, ...)
+    AsphericalPerturbation aspherical;
 };
 
 /// Initial data for a Dirac star, or a head-on binary, in the 2D cartoon code
@@ -58,6 +63,9 @@ struct DiracStar_params_t
  * mirror relation between the two spinors. Binaries superpose the spinors and combine the metrics as the boson-star
  * binaries do (id_choice 0 plain, 1 equal-mass fix, 2 unequal-mass fix). Gamma^i must be computed afterwards
  * (GammaCartoonCalculator). Use with disable_simd() as for BosonStar.
+ * Perturbations: the spherical one (m = 0) is applied by the 1D solver, with the constraints re-solved; the aspherical
+ * one (aspherical.active, m >= 1; single stars only) multiplies the matter fields by exp(-2 delta cos(m phi)), phi the
+ * polar angle from the symmetry axis about the star centre (arXiv:2609.30021, Eq. (11); AsphericalPerturbation.hpp).
  **/
 class DiracStar
 {
@@ -105,10 +113,11 @@ class DiracStar
             const BoostedDiracStarVars b = boosted_dirac_star(m_1d_sol, x, y, 0., m_params.rapidity, m_params.phase);
             double psi_Re[4], psi_Im[4];
             spinor(b, psi_Re, psi_Im);
+            const double F = m_params.aspherical.factor(x, y, 0.); // 1 unless perturbed aspherically
             for (int c = 0; c < 4; ++c)
             {
-                vars.psi_Re[c] = psi_Re[c];
-                vars.psi_Im[c] = psi_Im[c];
+                vars.psi_Re[c] = F * psi_Re[c];
+                vars.psi_Im[c] = F * psi_Im[c];
             }
             set_metric(vars, b.gLL, b.KLL, b.lapse, b.shiftx, -1.);
         }
