@@ -3,14 +3,10 @@
  * Please refer to LICENSE in GRChombo's root directory.
  */
 
-#undef USE_AHFINDER //just ignore ah finder for now
-
 #include "CH_Timer.H"
 #include "parstream.H" //Gives us pout()
 #include <chrono>
 #include <iostream>
-
-#undef USE_AHFINDER //just ignore ah finder for now
 
 #include "BHAMR.hpp"
 #include "DefaultLevelFactory.hpp"
@@ -48,14 +44,23 @@ int runGRChombo(int argc, char *argv[])
 #ifdef USE_AHFINDER
     if (sim_params.AH_activate)
     {
-        AHSurfaceGeometry sph1(sim_params.bh1_params.center);
-        // AHSurfaceGeometry sph2(sim_params.bh2_params.center);
-
-        bh_amr.m_ah_finder.add_ah(sph1, sim_params.AH_1_initial_guess_ellipsoid,
-                                  sim_params.AH_params);
-        // bh_amr.m_ah_finder.add_ah(sph2, sim_params.AH_2_initial_guess_ellipsoid,
-        //                           sim_params.AH_params);
-        // bh_amr.m_ah_finder.add_ah_merger(0, 1, sim_params.AH_params);
+        // one surface centred on the star or, for a head-on binary, one on each star plus their merger (all on the
+        // symmetry axis)
+        const auto &p = sim_params.procastar_params;
+        if (!p.binary)
+        {
+            AHSurfaceGeometry sph(p.star_centre);
+            bh_amr.m_ah_finder.add_ah(sph, sim_params.AH_1_initial_guess_ellipsoid, sim_params.AH_params);
+        }
+        else
+        {
+            const double q = p.mass_ratio, d = p.separation;
+            AHSurfaceGeometry sph1(std::array<double, CH_SPACEDIM>{p.star_centre[0] + q * d / (q + 1.), p.star_centre[1]});
+            AHSurfaceGeometry sph2(std::array<double, CH_SPACEDIM>{p.star_centre[0] - d / (q + 1.), p.star_centre[1]});
+            bh_amr.m_ah_finder.add_ah(sph1, sim_params.AH_1_initial_guess_ellipsoid, sim_params.AH_params);
+            bh_amr.m_ah_finder.add_ah(sph2, sim_params.AH_2_initial_guess_ellipsoid, sim_params.AH_params);
+            bh_amr.m_ah_finder.add_ah_merger(0, 1, sim_params.AH_params);
+        }
     }
 #endif
 

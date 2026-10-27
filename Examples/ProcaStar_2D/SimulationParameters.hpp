@@ -10,6 +10,10 @@
 #include "GRParmParse.hpp"
 #include "SimulationParametersBase.hpp"
 
+#ifdef USE_AHFINDER
+#include "AHInitialGuess.hpp"
+#endif
+
 // Problem specific includes:
 #include "ArrayTools.hpp"
 #include "ProcaFieldCartoon.hpp"
@@ -75,6 +79,19 @@ class SimulationParameters : public SimulationParametersBase
 
         // Weyl extraction
         pp.load("activate_extraction", activate_extraction, false);
+
+#ifdef USE_AHFINDER
+        // apparent horizon finder (to detect the collapse of unstable stars; AH_activate and the other AH_* parameters
+        // are read by SimulationParametersBase). The initial guesses are ellipses contracted along the axis by
+        // sqrt(1 - v^2) = 1/cosh(rapidity) for boosted stars
+        double guess1, guess2, contraction1, contraction2;
+        pp.load("AH_1_initial_guess", guess1, 0.3);
+        pp.load("AH_2_initial_guess", guess2, guess1);
+        pp.load("AH_1_ellipsoid_contraction", contraction1, 1. / cosh(procastar_params.rapidity));
+        pp.load("AH_2_ellipsoid_contraction", contraction2, 1. / cosh(procastar_params.rapidity2));
+        AH_1_initial_guess_ellipsoid.set_params(guess1 * contraction1, guess1);
+        AH_2_initial_guess_ellipsoid.set_params(guess2 * contraction2, guess2);
+#endif
     }
 
     void check_params()
@@ -100,6 +117,11 @@ class SimulationParameters : public SimulationParametersBase
     }
 
     bool activate_extraction;
+
+#ifdef USE_AHFINDER
+    AHInitialGuessEllipsoid AH_1_initial_guess_ellipsoid; //!< star 1 (or the single star)
+    AHInitialGuessEllipsoid AH_2_initial_guess_ellipsoid; //!< star 2 of a binary
+#endif
 
     double m_G_Newton;
     ProcaFieldCartoon::params_t proca_params;

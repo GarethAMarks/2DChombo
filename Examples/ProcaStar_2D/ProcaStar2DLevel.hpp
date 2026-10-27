@@ -6,8 +6,6 @@
 #ifndef PROCASTAR2DLEVEL_HPP_
 #define PROCASTAR2DLEVEL_HPP_
 
-#undef USE_AHFINDER // just ignore ah finder for now
-
 #include "BHAMR.hpp"
 #include "DefaultLevelFactory.hpp"
 #include "GRAMRLevel.hpp"

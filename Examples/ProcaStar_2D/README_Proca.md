@@ -208,4 +208,9 @@ There is a single (complex) field, so n is also the density of that field.
 **Dissipation.** The first-order Proca system needs Kreiss-Oliger dissipation, applied to all variables (`sigma =
 0.3`). The 1D code needed `damping_factor` of about 1 at its origin.
 
+**Apparent horizons.** The example compiles with or without `USE_AHFINDER` (PETSc), like the scalar-field examples.
+With it, `AH_activate = 1` puts a horizon finder on the star (on each star plus their merger for a binary), e.g. to
+detect the collapse of an unstable star. The initial guesses are `AH_1_initial_guess` / `AH_2_initial_guess`
+(default 0.3), contracted along the axis by sqrt(1 - v^2) for boosted stars.
+
 The grid, AMR and tagging values in `params.txt` are untested starting points.
