@@ -178,3 +178,24 @@ modes = 2 0
 write_extraction = 1
 extraction_subpath = "data/extraction" # directory for 'write_extraction = 1'
 extraction_file_prefix = "Weyl4_extraction_"
+
+#################################################
+# Apparent horizon finder: only used if the code is compiled with USE_AHFINDER (PETSc), as for the scalar-field
+# examples. One surface is centred on the star (one on each star plus their merger for a binary), e.g. to detect the
+# collapse of an unstable star.
+AH_activate = 0
+AH_num_ranks = 1
+AH_num_points_u = 41
+# AH_solve_interval = 1
+# AH_print_interval = 1
+# AH_track_center = true
+# AH_predict_origin = true
+# AH_level_to_run = 0
+# AH_start_time = 0.
+# AH_give_up_time = -1.
+AH_verbose = 1
+AH_1_initial_guess = 0.3         # initial radius (star 1 or the single star)
+# AH_2_initial_guess = 0.3       # star 2 of a binary (defaults to AH_1_initial_guess)
+# AH_1_ellipsoid_contraction = 1 # along the axis; defaults to sqrt(1 - v^2) of the star's boost
+# AH_2_ellipsoid_contraction = 1
+AH_coords_subpath = "data/coords"

@@ -167,4 +167,9 @@ void DiracStar2DLevel::specificPostTimeStep()
             mod_psi_file.write_header_line({"max mod psi"});
         mod_psi_file.write_time_data_line({mod_psi_max});
     }
+
+#ifdef USE_AHFINDER
+    if (m_p.AH_activate && m_level == m_p.AH_params.level_to_run)
+        m_bh_amr.m_ah_finder.solve(m_dt, m_time, m_restart_time);
+#endif
 }

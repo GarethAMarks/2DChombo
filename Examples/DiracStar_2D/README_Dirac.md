@@ -168,4 +168,9 @@ observers, n = -n_mu J^mu = psi^dag psi summed over the spinors.
 - `constraint_norms` and `min_chi`, as for the boson stars. The ADM integrands `M_adm` and `P_adm` are plottable, for
   integration over an extraction sphere.
 
+**Apparent horizons.** The example compiles with or without `USE_AHFINDER` (PETSc), like the scalar-field examples.
+With it, `AH_activate = 1` puts a horizon finder on the star (on each star plus their merger for a binary), e.g. to
+detect the collapse of an unstable star. The initial guesses are `AH_1_initial_guess` / `AH_2_initial_guess`
+(default 0.3), contracted along the axis by sqrt(1 - v^2) for boosted stars.
+
 The grid, AMR and tagging values in `params.txt` are untested starting points.
