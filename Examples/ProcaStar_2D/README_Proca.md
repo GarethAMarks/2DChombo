@@ -211,6 +211,9 @@ There is a single (complex) field, so n is also the density of that field.
   - Gauss still holds for a star at rest: E^i is radial and the factor depends only on angles. The exception is the
     cells next to the centre, where phi is undefined and the factor jumps; the violation there is O(delta) and is
     damped by Z.
+  - F = exp(-2 delta cos(m theta)), theta the polar angle, is smooth away from the centre. ExoZvezda's smoothed option
+    (`proca_perturb_smooth`), which removes the discontinuity of F along the line normal to the perturbation plane,
+    is therefore not needed here; on the cartoon plane it would give the same F anyway.
 - **Switching off:** `proca_perturb_aspherical` (default 0) must be 1 for m >= 1. With 0 the aspherical perturbations
   are disabled and the perturbation is spherical whatever m is.
 - **Restrictions:**
