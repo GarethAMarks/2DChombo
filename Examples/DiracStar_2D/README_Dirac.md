@@ -170,6 +170,9 @@ observers, n = -n_mu J^mu = psi^dag psi summed over the spinors.
   - In the cartoon code the perturbation is therefore axisymmetric. The two-axis perturbations of the paper are only
     in ExoZvezda.
   - As in the paper, the constraints are not re-solved, so Ham is violated at O(delta).
+  - F = exp(-2 delta cos(m theta)), theta the polar angle, is smooth away from the centre. ExoZvezda's smoothed option
+    (`dirac_perturb_smooth`), which removes the discontinuity of F along the line normal to the perturbation plane,
+    is therefore not needed here; on the cartoon plane it would give the same F anyway.
 - **Switching off:** `dirac_perturb_aspherical` (default 0) must be 1 for m >= 1. With 0 the aspherical perturbations
   are disabled and the perturbation is spherical whatever m is.
 - **Restrictions:**
