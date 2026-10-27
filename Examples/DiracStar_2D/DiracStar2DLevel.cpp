@@ -126,9 +126,10 @@ void DiracStar2DLevel::specificPostTimeStep()
         }
     }
 
+    // integrands of the ADM surface integrals (plottable as M_adm, P_adm; to be integrated over an extraction sphere)
     if (at_level_timestep_multiple(0))
-        BoxLoops::loop(ADMQuantities(m_p.extraction_params.center, m_dx, 0), m_state_new, m_state_diagnostics,
-                       EXCLUDE_GHOST_CELLS);
+        BoxLoops::loop(ADMQuantities(m_p.extraction_params.center, m_dx, c_Madm, Interval(c_Padm, c_Padm)),
+                       m_state_new, m_state_diagnostics, EXCLUDE_GHOST_CELLS);
 
     if (m_level == 0)
     {
@@ -141,13 +142,6 @@ void DiracStar2DLevel::specificPostTimeStep()
         if (first_step)
             constraints_file.write_header_line({"L^2_Ham", "L^2_Mom"});
         constraints_file.write_time_data_line({L2_Ham, L2_Mom});
-
-        double M_ADM = amr_reductions.sum(c_Madm);
-        SmallDataIO M_ADM_file("M_ADM", m_dt, m_time, m_restart_time, SmallDataIO::APPEND, first_step);
-        M_ADM_file.remove_duplicate_time_data();
-        if (first_step)
-            M_ADM_file.write_header_line({"M_ADM"});
-        M_ADM_file.write_time_data_line({M_ADM});
 
         // particle number of both spinors (conserved up to outflow through the boundary)
         double particle_number = amr_reductions.sum(c_N);

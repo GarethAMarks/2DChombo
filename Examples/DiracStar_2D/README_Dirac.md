@@ -165,6 +165,7 @@ observers, n = -n_mu J^mu = psi^dag psi summed over the spinors.
 
 - `ParticleNumber` (conserved apart from outflow);
 - `mod_psi_max`, which equals the central amplitude A_c for a star at rest;
-- `constraint_norms`, `M_ADM` and `min_chi`, as for the boson stars.
+- `constraint_norms` and `min_chi`, as for the boson stars. The ADM integrands `M_adm` and `P_adm` are plottable, for
+  integration over an extraction sphere.
 
 The grid, AMR and tagging values in `params.txt` are untested starting points.
